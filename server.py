@@ -5,12 +5,14 @@ Provides standardized MCP tool interface for notification channels
 """
 
 import json
+import os
 import sys
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from notify import send, push_config
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "tools", "pytools", "src"))
+from pytools.notify_lib import send, push_config
 
 
 class MCPAdapter:
@@ -44,6 +46,7 @@ class MCPServer:
 
     def __init__(self):
         self.tools = self._register_tools()
+        self.prompt_text = self._load_prompt_text()
 
     def _register_tools(self) -> List[Dict[str, Any]]:
         """注册 MCP 工具"""
@@ -88,6 +91,36 @@ class MCPServer:
         """处理 tools/list 请求"""
         return {"tools": self.tools}
 
+    def handle_prompts_list(self) -> Dict[str, Any]:
+        """处理 prompts/list 请求"""
+        return {
+            "prompts": [
+                {
+                    "name": "mcp-push-guidelines",
+                    "title": "mcp-push usage guidelines",
+                    "description": "When to notify via mcp-push",
+                }
+            ]
+        }
+
+    def handle_prompts_get(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """处理 prompts/get 请求"""
+        name = request.get("name")
+        if name != "mcp-push-guidelines":
+            return {
+                "isError": True,
+                "content": [{"type": "text", "text": f"Unknown prompt: {name}"}],
+            }
+        return {
+            "description": "Guidelines for when to send notifications via mcp-push.",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": self.prompt_text}],
+                }
+            ],
+        }
+
     def handle_tools_call(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """处理 tools/call 请求"""
         tool_name = request.get("name")
@@ -115,18 +148,27 @@ class MCPServer:
             }
 
         try:
-            send(title, content)
+            result = send(title, content)
+            errors = result.get("errors", {})
+            channels = int(result.get("channels", 0) or 0)
+            status = self._status_from_errors(errors, channels)
             return {
                 "content": [
                     {
                         "type": "text",
-                        "text": json.dumps({
-                            "status": "success",
-                            "message": f"消息已推送到所有配置渠道",
-                            "channels_count": len(self._get_active_channels())
-                        }, ensure_ascii=False, indent=2)
+                        "text": json.dumps(
+                            {
+                                "status": status,
+                                "message": "消息已推送" if status == "success" else "消息推送未完全成功",
+                                "channels_count": channels,
+                                "errors": errors,
+                            },
+                            ensure_ascii=False,
+                            indent=2,
+                        ),
                     }
-                ]
+                ],
+                "isError": status == "error",
             }
         except Exception as e:
             return {
@@ -161,21 +203,26 @@ class MCPServer:
         title, content = MCPAdapter.event_to_send(args)
 
         try:
-            send(title, content)
+            result = send(title, content)
+            errors = result.get("errors", {})
+            channels = int(result.get("channels", 0) or 0)
+            status = self._status_from_errors(errors, channels)
             return {
                 "content": [
                     {
                         "type": "text",
                         "text": json.dumps({
-                            "status": "success",
+                            "status": status,
                             "run_id": run_id,
                             "event": event,
-                            "message": "事件已推送",
+                            "message": "事件已推送" if status == "success" else "事件推送未完全成功",
                             "timestamp": args["timestamp"],
-                            "channels_count": len(self._get_active_channels())
+                            "channels_count": channels,
+                            "errors": errors,
                         }, ensure_ascii=False, indent=2)
                     }
-                ]
+                ],
+                "isError": status == "error",
             }
         except Exception as e:
             return {
@@ -210,6 +257,23 @@ class MCPServer:
             channels.append("ntfy")
         return channels
 
+    @staticmethod
+    def _load_prompt_text() -> str:
+        prompt_path = os.path.join(os.path.dirname(__file__), "提示词.json")
+        try:
+            with open(prompt_path, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception:
+            return "Use mcp-push only for task completion (>60s) or when user confirmation is needed."
+
+    @staticmethod
+    def _status_from_errors(errors: Dict[str, str], channels: int) -> str:
+        if not errors:
+            return "success"
+        if channels > 0 and len(errors) < channels:
+            return "partial_success"
+        return "error"
+
     def run_stdio(self):
         """通过 stdio 运行 MCP Server"""
         for line in sys.stdin:
@@ -219,6 +283,11 @@ class MCPServer:
 
                 if method == "tools/list":
                     response = self.handle_tools_list()
+                elif method == "prompts/list":
+                    response = self.handle_prompts_list()
+                elif method == "prompts/get":
+                    params = request.get("params", {})
+                    response = self.handle_prompts_get(params)
                 elif method == "tools/call":
                     params = request.get("params", {})
                     response = self.handle_tools_call(params)

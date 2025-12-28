@@ -33,7 +33,7 @@ _legacy.print = _log_print
 push_config = _legacy.push_config
 
 
-def send(title: str, content: str, ignore_default_config: bool = False, **kwargs) -> Dict[str, str]:
+def send(title: str, content: str, ignore_default_config: bool = False, **kwargs) -> Dict[str, object]:
     """
     Send notification to all configured channels.
 
@@ -51,14 +51,14 @@ def send(title: str, content: str, ignore_default_config: bool = False, **kwargs
 
     if not content:
         logger.error("Content is empty for title: %s", title)
-        return {"errors": {"input": "content is empty"}}
+        return {"errors": {"input": "content is empty"}, "channels": 0}
 
     skip_title = os.getenv("SKIP_PUSH_TITLE")
     if skip_title and title in re.split("\n", skip_title):
         logger.info("Skipping title blocked by SKIP_PUSH_TITLE: %s", title)
-        return {"errors": {"skipped": "title skipped by SKIP_PUSH_TITLE"}}
+        return {"errors": {"skipped": "title skipped by SKIP_PUSH_TITLE"}, "channels": 0}
 
-    if _legacy.push_config.get("HITOKOTO") != "false":
+    if str(_legacy.push_config.get("HITOKOTO")).lower() != "false":
         try:
             content = f"{content}\n\n{_legacy.one()}"
         except Exception as e:
@@ -67,7 +67,7 @@ def send(title: str, content: str, ignore_default_config: bool = False, **kwargs
     notify_function = _legacy.add_notify_function()
     if not notify_function:
         logger.warning("No notification channels configured")
-        return {"errors": {"config": "no notification channels configured"}}
+        return {"errors": {"config": "no notification channels configured"}, "channels": 0}
 
     errors: Dict[str, str] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(notify_function)) as executor:
@@ -88,4 +88,4 @@ def send(title: str, content: str, ignore_default_config: bool = False, **kwargs
                 errors[name] = str(exc)
                 logger.error("Notification failure on %s: %s", name, exc)
 
-    return {"errors": errors}
+    return {"errors": errors, "channels": len(notify_function)}

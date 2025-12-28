@@ -14,6 +14,15 @@ def _require_fields(params: Dict[str, Any], fields: list) -> None:
         raise ValueError(f"Missing required fields: {', '.join(missing)}")
 
 
+def _status_from_errors(errors: Dict[str, str], channels: int) -> str:
+    """Derive status from errors and channel count."""
+    if not errors:
+        return "success"
+    if channels > 0 and len(errors) < channels:
+        return "partial_success"
+    return "error"
+
+
 def handle_notify_send(params: Dict[str, Any]) -> Dict[str, Any]:
     """Handle notify.send tool invocation."""
     _require_fields(params, ["title", "content"])
@@ -22,7 +31,13 @@ def handle_notify_send(params: Dict[str, Any]) -> Dict[str, Any]:
         params["content"],
         ignore_default_config=params.get("ignore_default_config", False),
     )
-    return {"status": "success", "errors": result.get("errors", {})}
+    errors = result.get("errors", {})
+    channels = int(result.get("channels", 0) or 0)
+    return {
+        "status": _status_from_errors(errors, channels),
+        "errors": errors,
+        "channels": channels,
+    }
 
 
 def handle_notify_event(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -42,12 +57,15 @@ def handle_notify_event(params: Dict[str, Any]) -> Dict[str, Any]:
         content += f"\n\nAdditional data:\n```json\n{data_str}\n```"
 
     result = notify_lib.send(title, content)
+    errors = result.get("errors", {})
+    channels = int(result.get("channels", 0) or 0)
     return {
-        "status": "success",
+        "status": _status_from_errors(errors, channels),
         "run_id": params["run_id"],
         "event": event,
         "timestamp": timestamp,
-        "errors": result.get("errors", {}),
+        "errors": errors,
+        "channels": channels,
     }
 
 
