@@ -25,7 +25,7 @@ pip install -r tools/pytools/requirements.txt
 ## Register MCP server
 
 ```bash
-claude mcp add mcp-push -s user --transport stdio -- node $(pwd)/apps/mcp-server/build/index.js
+codex mcp add mcp-push --transport stdio -- node $(pwd)/apps/mcp-server/build/index.js
 ```
 
 ## Configure channels
