@@ -16,29 +16,54 @@
 
 ## 安装与配置
 
-### 1. 安装 mcp-push
+### 1. 环境准备
+
+- **Python**: 需要 Python 3.8 或更高版本
+- **Claude Desktop**: 确保已安装并登录 Claude Desktop 应用
+
+### 2. 获取代码
 
 ```bash
-# 使用 claude mcp 命令行工具安装
-claude mcp add mcp-push -s user --transport stdio -- python /path/to/mcp-push/server.py
+git clone https://github.com/d4renk/mcp-push.git
+cd mcp-push
 ```
-> 将 `/path/to/mcp-push` 替换为本仓库的实际路径
 
-### 2. 配置通知渠道
+### 3. 安装依赖
 
-复制配置模板并填入凭据：
+```bash
+pip install -r requirements.txt
+```
+
+### 4. 注册 MCP 工具
+
+使用 Claude CLI 将 mcp-push 注册到 Claude Desktop：
+
+```bash
+claude mcp add mcp-push -s user --transport stdio -- python $(pwd)/server.py
+```
+
+### 5. 配置通知渠道
+
+复制配置模板并编辑：
 
 ```bash
 cp config.sh.example config.sh
-# 编辑 config.sh，填入通知渠道的 Token/Secret
+# 使用文本编辑器打开 config.sh 填入你的通知渠道 Token/Secret
+nano config.sh 
 ```
+> `config.sh` 中的变量会被自动加载。你也可以直接将环境变量添加到 `~/.bashrc` 或 `.zshrc` 中。
 
-### 3. 验证安装
+### 6. 验证安装
 
 ```bash
 claude mcp list
 ```
-看到 `mcp-push: ... - ✓ Connected` 说明安装成功
+看到 `mcp-push: ... - ✓ Connected` 说明安装成功。
+
+你也可以运行内置测试脚本来验证配置是否生效：
+```bash
+python3 test_mcp_push.py
+```
 
 ---
 
