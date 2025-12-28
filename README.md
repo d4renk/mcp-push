@@ -12,6 +12,35 @@
 - **双语言实现**：Python 和 JavaScript 完整支持
 - **零侵入集成**：保留原有 API，向后完全兼容
 
+## 安装步骤
+
+### 1.1 安装 mcp-push
+
+```bash
+claude mcp add mcp-push -s user --transport stdio -- python /path/to/mcp-push/server.py
+```
+
+> 将 `/path/to/mcp-push` 替换为本仓库的实际路径
+
+### 1.2 配置通知渠道
+
+复制配置模板并填入凭据：
+
+```bash
+cp config.sh.example config.sh
+# 编辑 config.sh，填入通知渠道的 Token/Secret
+```
+
+### 1.3 验证安装
+
+```bash
+claude mcp list
+```
+
+看到 `mcp-push: ... - ✓ Connected` 说明安装成功
+
+---
+
 ## 快速开始
 
 ### 作为 MCP 工具使用
