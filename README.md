@@ -24,9 +24,25 @@ pip install -r tools/pytools/requirements.txt
 
 ## Register MCP server
 
+Codex:
+
 ```bash
-codex mcp add mcp-push --transport stdio -- node $(pwd)/apps/mcp-server/build/index.js
+codex mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
 ```
+
+Claude:
+
+```bash
+claude mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+```
+
+Gemini:
+
+```bash
+gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+```
+
+If your CLI version requires an explicit transport flag, append `--transport stdio` before `--`.
 
 ## Configure channels
 
