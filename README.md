@@ -80,8 +80,8 @@ python3 test_mcp_push.py
 
 **仅在以下两种情况下触发推送：**
 
-1.  **任务完成 (Task Finished)**：当长耗时任务执行结束（无论成功或失败）时。
-2.  **需要用户确认 (User Action Needed)**：当流程暂停，等待用户决策或授权时。
+1. **任务完成 (Task Finished)**：当长耗时任务执行结束（无论成功或失败）时。
+2. **需要用户确认 (User Action Needed)**：当流程暂停，等待用户决策或授权时。
 
 > **注意**：禁止在任务启动 (`start`) 或中间过程 (`update`) 频繁推送，以免打扰用户，除非用户明确要求追踪进度。
 
@@ -89,10 +89,10 @@ python3 test_mcp_push.py
 
 #### 1. `notify.send` - 简单消息推送
 
-**用途**：发送一次性通知，用于 "任务完成" 或 "请求确认"。
+**用途**：发送一次性通知，用于“任务完成”或“请求确认”。
 
 **参数**：
-- `title` (string, 必选): 消息标题（如 "✅ 部署完成" 或 "⚠️ 等待批准"）
+- `title` (string, 必选): 消息标题（如 `✅ 部署完成` 或 `⚠️ 等待批准`）
 - `content` (string, 必选): 消息内容（支持换行符 `\n`）
 
 **调用示例**：
@@ -113,13 +113,13 @@ await mcp_client.call_tool("notify.send", {
 
 #### 2. `notify.event` - 结构化事件推送
 
-**用途**：主要用于发送任务的最终状态（`end` 或 `error`）。除非用户明确要求实时监控，否则**不要**发送 `start` 或 `update` 事件。
+**用途**：发送任务的最终状态（`end` 或 `error`）。除非用户明确要求实时监控，否则**不要**发送 `start` 或 `update` 事件。
 
 **参数**：
 - `run_id` (string, 必选): 任务唯一标识符
-- `event` (string, 必选): 事件类型。**通常仅使用 `end` 或 `error`**。
+- `event` (string, 必选): 事件类型，**通常仅使用 `end` 或 `error`**
 - `message` (string, 必选): 状态描述
-- `data` (object, 可选): 附加数据 (step, progress, artifact_url, etc.)
+- `data` (object, 可选): 附加数据（step, progress, artifact_url 等）
 
 **调用示例**：
 
@@ -152,8 +152,8 @@ await mcp_client.call_tool("notify.event", {
 
 ### 调用规范与注意事项
 
-1.  **最小打扰原则**：默认不通知过程，只通知结果。
-2.  **错误处理**：推送是异步的最佳努力交付，单个渠道失败不影响其他渠道。
+1. **最小打扰原则**：默认不通知过程，只通知结果。
+2. **错误处理**：推送是异步的最佳努力交付，单个渠道失败不影响其他渠道。
 ```
 
 </details>
