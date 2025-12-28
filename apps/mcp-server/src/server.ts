@@ -14,8 +14,8 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PROMPT_NAME = "mcp-push-guidelines";
-const PROMPT_PATH = join(__dirname, "../../../../提示词.json");
+const PROMPT_NAME = "mcp-push-usage";
+const PROMPT_PATH = join(__dirname, "../../../prompt.json");
 
 const loadPromptText = (): string => {
   try {
