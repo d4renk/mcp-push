@@ -73,6 +73,7 @@ python3 test_mcp_push.py
 <details>
 <summary><strong>🤖 MCP Agent 集成指南 (Core Instruction) - 点击展开</strong></summary>
 
+```markdown
 本章节是 **mcp-push** 的核心使用指南，专为 Agent 和 MCP 客户端设计。
 
 ### 调用时机与策略
@@ -153,6 +154,7 @@ await mcp_client.call_tool("notify.event", {
 
 1.  **最小打扰原则**：默认不通知过程，只通知结果。
 2.  **错误处理**：推送是异步的最佳努力交付，单个渠道失败不影响其他渠道。
+```
 
 </details>
 
