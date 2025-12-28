@@ -67,7 +67,9 @@ python3 test_mcp_push.py
 
 ---
 
-## MCP Agent 集成指南 (Core Instruction)
+
+<details>
+<summary><strong>🤖 MCP Agent 集成指南 (Core Instruction) - 点击展开</strong></summary>
 
 本章节是 **mcp-push** 的核心使用指南，专为 Agent 和 MCP 客户端设计。在需要通知用户或推送任务状态时，请遵循以下规范。
 
@@ -160,6 +162,8 @@ await mcp_client.call_tool("notify.event", {
 3.  **Progress 范围**：必须在 `0.0` 到 `1.0` 之间。`end` 事件必须设为 `1.0`。
 4.  **错误处理**：推送是异步的最佳努力交付，单个渠道失败不影响其他渠道。不要依赖 `notify` 工具的返回值来决定后续业务逻辑。
 
+</details>
+
 ---
 
 ## 库模式调用 (非 MCP 场景)
@@ -180,7 +184,9 @@ await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
 
 ---
 
-## 支持的通知渠道
+
+<details>
+<summary><strong>📢 支持的通知渠道 (20+) - 点击展开</strong></summary>
 
 只需配置相应渠道的环境变量即可自动启用。
 
@@ -208,6 +214,8 @@ await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
 | 💬 Synology Chat | `CHAT_URL`, `CHAT_TOKEN` | [配置指南](docs/CHANNEL_CONFIG.md#synology-chat) |
 | 🤖 微加机器人 | `WE_PLUS_BOT_TOKEN` | [配置指南](docs/CHANNEL_CONFIG.md#微加机器人-webot) |
 | 🌐 WxPusher | `WXPUSHER_APP_TOKEN` | [配置指南](docs/CHANNEL_CONFIG.md#wxpusher) |
+
+</details>
 
 ## 配置示例
 
