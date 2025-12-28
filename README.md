@@ -51,6 +51,7 @@ cp config.sh.example config.sh
 # 使用文本编辑器打开 config.sh 填入你的通知渠道 Token/Secret
 nano config.sh 
 ```
+
 > `config.sh` 中的变量会被自动加载。你也可以直接将环境变量添加到 `~/.bashrc` 或 `.zshrc` 中。
 
 ### 6. 验证安装
@@ -58,15 +59,16 @@ nano config.sh
 ```bash
 claude mcp list
 ```
+
 看到 `mcp-push: ... - ✓ Connected` 说明安装成功。
 
 你也可以运行内置测试脚本来验证配置是否生效：
+
 ```bash
 python3 test_mcp_push.py
 ```
 
 ---
-
 
 <details>
 <summary><strong>🤖 MCP Agent 集成指南 (Core Instruction) - 点击展开</strong></summary>
@@ -93,6 +95,7 @@ python3 test_mcp_push.py
 - `content` (string, 必选): 消息内容（支持换行符 `\n`）
 
 **调用示例**：
+
 ```python
 # 场景 1: 任务完成
 await mcp_client.call_tool("notify.send", {
@@ -120,6 +123,7 @@ await mcp_client.call_tool("notify.send", {
 **调用示例**：
 
 **任务完成 (End)**
+
 ```python
 await mcp_client.call_tool("notify.event", {
   "run_id": "data-analysis-20240101-001",
@@ -133,6 +137,7 @@ await mcp_client.call_tool("notify.event", {
 ```
 
 **任务失败 (Error)**
+
 ```python
 await mcp_client.call_tool("notify.event", {
   "run_id": "data-analysis-20240101-001",
@@ -158,12 +163,14 @@ await mcp_client.call_tool("notify.event", {
 除了通过 MCP 协议调用，你也作为普通 Python/JS 库直接使用。
 
 **Python**
+
 ```python
 from notify import send
 send("任务完成", "已生成 PDF 报告，耗时 3.2s")
 ```
 
 **JavaScript**
+
 ```javascript
 const { sendNotify } = require('./sendNotify');
 await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
@@ -171,14 +178,13 @@ await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
 
 ---
 
-
 <details>
 <summary><strong>📢 支持的通知渠道 (20+) - 点击展开</strong></summary>
 
 只需配置相应渠道的环境变量即可自动启用。
 
 | 渠道类型 | 环境变量 | 文档 |
-|---------|---------|------|
+| :--- | :--- | :--- |
 | 🔔 Bark | `BARK_PUSH` | [配置指南](docs/CHANNEL_CONFIG.md#bark) |
 | 💬 钉钉机器人 | `DD_BOT_TOKEN`, `DD_BOT_SECRET` | [配置指南](docs/CHANNEL_CONFIG.md#钉钉机器人-dingtalk) |
 | 🕊️ 飞书机器人 | `FSKEY` | [配置指南](docs/CHANNEL_CONFIG.md#飞书机器人-feishulark) |
@@ -207,12 +213,14 @@ await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
 ## 配置示例
 
 **最小配置（仅钉钉）**
+
 ```bash
 export DD_BOT_TOKEN="your-token"
 export DD_BOT_SECRET="your-secret"
 ```
 
 **多渠道配置**
+
 ```bash
 # 钉钉
 export DD_BOT_TOKEN="token"
@@ -230,6 +238,7 @@ export SMTP_PASSWORD="password"
 ```
 
 **通用配置**
+
 - `HITOKOTO`: 是否附加一言随机句子（默认 `true`，设为 `false` 关闭）
 - `SKIP_PUSH_TITLE`: 跳过推送的标题列表（换行分隔）
 
