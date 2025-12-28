@@ -73,7 +73,6 @@ class MCPServer:
                 from . import notify  # type: ignore
             except ImportError:
                 # Allow running as a script - add parent dir to path
-                import sys
                 import os
                 parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 if parent not in sys.path:
