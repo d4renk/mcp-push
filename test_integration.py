@@ -78,17 +78,17 @@ def main():
         sock.connect(socket_path)
         print("Connected!")
 
-        # Test 1: notify.send
-        print("\n=== Test 1: notify.send ===")
-        response = send_request(sock, "notify.send", {
+        # Test 1: notify_send
+        print("\n=== Test 1: notify_send ===")
+        response = send_request(sock, "notify_send", {
             "title": "Test Notification",
             "content": "This is a test from integration test"
         })
         print(f"Response: {json.dumps(response, indent=2, ensure_ascii=False)}")
 
-        # Test 2: notify.event
-        print("\n=== Test 2: notify.event ===")
-        response = send_request(sock, "notify.event", {
+        # Test 2: notify_event
+        print("\n=== Test 2: notify_event ===")
+        response = send_request(sock, "notify_event", {
             "run_id": "test-integration-001",
             "event": "end",
             "message": "Integration test completed successfully",

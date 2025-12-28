@@ -102,7 +102,7 @@ export class McpPushServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
-          name: "notify.send",
+          name: "notify_send",
           description:
             "Send notification to all configured channels (DingTalk, Feishu, Telegram, WeChat, Email, etc.)",
           inputSchema: {
@@ -125,7 +125,7 @@ export class McpPushServer {
           },
         },
         {
-          name: "notify.event",
+          name: "notify_event",
           description:
             "Send structured task event notification with run_id tracking (start, update, end, error)",
           inputSchema: {
@@ -161,14 +161,16 @@ export class McpPushServer {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
+      const normalizedName =
+        name === "notify.send" ? "notify_send" : name === "notify.event" ? "notify_event" : name;
 
       try {
         let result: unknown;
 
-        if (name === "notify.send") {
+        if (normalizedName === "notify_send") {
           const params = NotifySendSchema.parse(args);
           result = await this.bridge.callTool("notify.send", params);
-        } else if (name === "notify.event") {
+        } else if (normalizedName === "notify_event") {
           const params = NotifyEventSchema.parse(args);
           result = await this.bridge.callTool("notify.event", params);
         } else {

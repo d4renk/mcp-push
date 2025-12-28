@@ -24,7 +24,7 @@ def _status_from_errors(errors: Dict[str, str], channels: int) -> str:
 
 
 def handle_notify_send(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle notify.send tool invocation."""
+    """Handle notify_send/notify_send tool invocation."""
     _require_fields(params, ["title", "content"])
     result = notify_lib.send(
         params["title"],
@@ -41,7 +41,7 @@ def handle_notify_send(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_notify_event(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle notify.event tool invocation."""
+    """Handle notify_event/notify_event tool invocation."""
     _require_fields(params, ["run_id", "event", "message"])
     event = params["event"]
     if event not in {"start", "update", "end", "error"}:
@@ -70,8 +70,10 @@ def handle_notify_event(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 TOOL_MAP: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
-    "notify.send": handle_notify_send,
-    "notify.event": handle_notify_event,
+    "notify_send": handle_notify_send,
+    "notify_event": handle_notify_event,
+    "notify_send": handle_notify_send,
+    "notify_event": handle_notify_event,
 }
 
 

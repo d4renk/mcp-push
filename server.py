@@ -52,7 +52,7 @@ class MCPServer:
         """注册 MCP 工具"""
         return [
             {
-                "name": "notify.send",
+                "name": "notify_send",
                 "description": "向所有已配置渠道广播消息",
                 "inputSchema": {
                     "type": "object",
@@ -64,7 +64,7 @@ class MCPServer:
                 }
             },
             {
-                "name": "notify.event",
+                "name": "notify_event",
                 "description": "发送结构化事件流（支持进度追踪）",
                 "inputSchema": {
                     "type": "object",
@@ -125,10 +125,14 @@ class MCPServer:
         """处理 tools/call 请求"""
         tool_name = request.get("name")
         arguments = request.get("arguments", {})
+        normalized_name = {
+            "notify_send": "notify_send",
+            "notify_event": "notify_event",
+        }.get(tool_name, tool_name)
 
-        if tool_name == "notify.send":
+        if normalized_name == "notify_send":
             return self._execute_send(arguments)
-        elif tool_name == "notify.event":
+        elif normalized_name == "notify_event":
             return self._execute_event(arguments)
         else:
             return {
@@ -137,7 +141,7 @@ class MCPServer:
             }
 
     def _execute_send(self, args: Dict[str, Any]) -> Dict[str, Any]:
-        """执行 notify.send 工具"""
+        """执行 notify_send 工具"""
         title = args.get("title", "")
         content = args.get("content", "")
 
@@ -177,7 +181,7 @@ class MCPServer:
             }
 
     def _execute_event(self, args: Dict[str, Any]) -> Dict[str, Any]:
-        """执行 notify.event 工具"""
+        """执行 notify_event 工具"""
         run_id = args.get("run_id")
         event = args.get("event")
         message = args.get("message")

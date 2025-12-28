@@ -84,14 +84,14 @@ def test_mcp_server():
         else:
              print("❌ tools/list failed or unexpected response")
 
-        # 2. Call notify.send
-        print("\n--- Testing notify.send ---")
+        # 2. Call notify_send
+        print("\n--- Testing notify_send ---")
         send_request({
             "jsonrpc": "2.0",
             "method": "tools/call",
             "id": 2,
             "params": {
-                "name": "notify.send",
+                "name": "notify_send",
                 "arguments": {
                     "title": "Test Title",
                     "content": "Test Content from MCP"
@@ -101,12 +101,12 @@ def test_mcp_server():
         # Expect logs then response
         resp = read_response()
         if resp and "content" in resp and not resp.get("isError"):
-            print("✅ notify.send successful")
+            print("✅ notify_send successful")
         else:
-            print("❌ notify.send failed")
+            print("❌ notify_send failed")
 
-        # 3. Call notify.event (Sequence)
-        print("\n--- Testing notify.event Sequence ---")
+        # 3. Call notify_event (Sequence)
+        print("\n--- Testing notify_event Sequence ---")
         run_id = "test-run-001"
         
         # Start
@@ -115,7 +115,7 @@ def test_mcp_server():
             "method": "tools/call",
             "id": 3,
             "params": {
-                "name": "notify.event",
+                "name": "notify_event",
                 "arguments": {
                     "run_id": run_id,
                     "event": "start",
@@ -131,7 +131,7 @@ def test_mcp_server():
             "method": "tools/call",
             "id": 4,
             "params": {
-                "name": "notify.event",
+                "name": "notify_event",
                 "arguments": {
                     "run_id": run_id,
                     "event": "update",
@@ -148,7 +148,7 @@ def test_mcp_server():
             "method": "tools/call",
             "id": 5,
             "params": {
-                "name": "notify.event",
+                "name": "notify_event",
                 "arguments": {
                     "run_id": run_id,
                     "event": "end",

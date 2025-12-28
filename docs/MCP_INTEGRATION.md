@@ -10,7 +10,7 @@
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │              Tool Registry & Router                     │  │
 │  │  ┌───────────────┬───────────────┬──────────────────┐  │  │
-│  │  │ notify.send   │ notify.event  │ notify.channel.* │  │  │
+│  │  │ notify_send   │ notify_event  │ notify.channel.* │  │  │
 │  │  └───────────────┴───────────────┴──────────────────┘  │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                              │                                │
@@ -57,7 +57,7 @@ MCP Server 需要实现两个标准端点：
 {
   "tools": [
     {
-      "name": "notify.send",
+      "name": "notify_send",
       "description": "向所有已配置渠道广播消息",
       "inputSchema": {
         "type": "object",
@@ -69,7 +69,7 @@ MCP Server 需要实现两个标准端点：
       }
     },
     {
-      "name": "notify.event",
+      "name": "notify_event",
       "description": "发送结构化事件流（支持进度追踪）",
       "inputSchema": {
         "type": "object",
@@ -100,7 +100,7 @@ MCP Server 需要实现两个标准端点：
 
 ```json
 {
-  "name": "notify.event",
+  "name": "notify_event",
   "arguments": {
     "run_id": "task-001",
     "event": "end",

@@ -7,7 +7,7 @@
 2. **需要用户确认 (User Action Needed)**：当流程暂停，等待用户决策或授权时。
 > **注意**：禁止在任务启动 (`start`) 或中间过程 (`update`) 频繁推送，以免打扰用户，除非用户明确要求追踪进度。
 ### 推送工具解析
-#### 1. `notify.send` - 简单消息推送
+#### 1. `notify_send` - 简单消息推送
 
 **用途**：发送一次性通知，用于“任务完成”或“请求确认”。
 
@@ -19,17 +19,17 @@
 
 ```python
 # 场景 1: 任务完成
-await mcp_client.call_tool("notify.send", {
+await mcp_client.call_tool("notify_send", {
   "title": "任务完成",
   "content": "数据分析已完成，共处理 10000 条记录"
 })
 
 # 场景 2: 需要用户确认
-await mcp_client.call_tool("notify.send", {
+await mcp_client.call_tool("notify_send", {
   "title": "等待批准",
   "content": "检测到敏感文件删除操作，请确认是否继续？"
 })
-2. notify.event - 结构化事件推送
+2. notify_event - 结构化事件推送
 用途：发送任务的最终状态（end 或 error）。除非用户明确要求实时监控，否则不要发送 start 或 update 事件。
 
 参数：
@@ -42,7 +42,7 @@ data (object, 可选): 附加数据（step, progress, artifact_url 等）
 
 任务完成 (End)
 
-await mcp_client.call_tool("notify.event", {
+await mcp_client.call_tool("notify_event", {
   "run_id": "data-analysis-20240101-001",
   "event": "end",
   "message": "分析完成，共发现 127 个异常事件",
@@ -53,7 +53,7 @@ await mcp_client.call_tool("notify.event", {
 })
 任务失败 (Error)
 
-await mcp_client.call_tool("notify.event", {
+await mcp_client.call_tool("notify_event", {
   "run_id": "data-analysis-20240101-001",
   "event": "error",
   "message": "任务失败：连接数据库超时",

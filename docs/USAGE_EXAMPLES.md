@@ -8,7 +8,7 @@
 
 ```python
 # Python - 使用 MCP 工具
-await mcp.call_tool("notify.send", {
+await mcp.call_tool("notify_send", {
     "title": "数据处理完成",
     "content": "已成功处理 10,000 条记录"
 })
@@ -24,14 +24,14 @@ await sendNotify('数据处理完成', '已成功处理 10,000 条记录');
 
 ```python
 # 任务启动
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": "data-pipeline-20250101-001",
     "event": "start",
     "message": "开始处理 10GB 原始数据"
 })
 
 # 执行中更新 - 第一阶段
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": "data-pipeline-20250101-001",
     "event": "update",
     "message": "数据清洗完成，开始特征提取",
@@ -42,7 +42,7 @@ await mcp.call_tool("notify.event", {
 })
 
 # 执行中更新 - 第二阶段
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": "data-pipeline-20250101-001",
     "event": "update",
     "message": "模型训练中（Epoch 5/10）",
@@ -53,7 +53,7 @@ await mcp.call_tool("notify.event", {
 })
 
 # 任务成功完成
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": "data-pipeline-20250101-001",
     "event": "end",
     "message": "任务完成，模型准确率 94.3%",
@@ -74,7 +74,7 @@ await mcp.call_tool("notify.event", {
 
 ```python
 # 错误事件
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": "deployment-002",
     "event": "error",
     "message": "部署失败：数据库迁移超时",
@@ -93,7 +93,7 @@ await mcp.call_tool("notify.event", {
 
 ```python
 # 资源告警
-await mcp.call_tool("notify.send", {
+await mcp.call_tool("notify_send", {
     "title": "⚠️ 系统告警",
     "content": """
 **服务器**: production-01
@@ -115,7 +115,7 @@ import time
 run_id = "db-migration-20250101"
 
 # 启动
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": run_id,
     "event": "start",
     "message": "开始迁移 100 万条用户数据"
@@ -126,7 +126,7 @@ for i in range(1, 11):
     # 模拟数据处理
     time.sleep(60)
 
-    await mcp.call_tool("notify.event", {
+    await mcp.call_tool("notify_event", {
         "run_id": run_id,
         "event": "update",
         "message": f"已迁移 {i * 100000} 条记录",
@@ -137,7 +137,7 @@ for i in range(1, 11):
     })
 
 # 完成
-await mcp.call_tool("notify.event", {
+await mcp.call_tool("notify_event", {
     "run_id": run_id,
     "event": "end",
     "message": "数据迁移完成，共迁移 1,000,000 条记录",
@@ -180,7 +180,7 @@ export SMTP_NAME="AI Agent"
 
 ```python
 # 同时推送到企业微信和邮件
-await mcp.call_tool("notify.send", {
+await mcp.call_tool("notify_send", {
     "title": "周报生成完成",
     "content": "已生成第 52 周团队周报，请查收"
 })
@@ -224,7 +224,7 @@ response = client.messages.create(
 for block in response.content:
     if block.type == "tool_use" and block.name == "notify_event":
         # 调用实际的 MCP 工具
-        await mcp.call_tool("notify.event", block.input)
+        await mcp.call_tool("notify_event", block.input)
 ```
 
 ### 5.2 OpenAI GPT 调用
@@ -264,7 +264,7 @@ for choice in response.choices:
             if tool_call.function.name == "notify_send":
                 import json
                 args = json.loads(tool_call.function.arguments)
-                await mcp.call_tool("notify.send", args)
+                await mcp.call_tool("notify_send", args)
 ```
 
 ### 5.3 Codex MCP 直接调用
@@ -280,14 +280,17 @@ Codex Task: 分析日志文件并在完成时通知我
 Codex 将自动:
 1. 读取日志文件
 2. 执行分析
-3. 调用 notify.event 工具推送结果
+3. 调用 notify_event 工具推送结果
 """
 
-# 方式 2: 配置 Codex 使用 mcp-push
-# ~/.codex/config.toml
-# [mcp.servers.notify]
-# command = "python"
-# args = ["/path/to/mcp-push/server.py"]
+# 方式 2: 通过 CLI 注册 MCP 服务器
+# Codex / Claude / Gemini
+# codex mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+# claude mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+# gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+# 如果 CLI 需要显式传输参数，可在 `--` 前追加: --transport stdio
+# 也可使用 uvx 直接安装并注册:
+# gemini mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git geminimcp
 ```
 
 ## 场景 6: 错误处理与重试
@@ -296,7 +299,7 @@ Codex 将自动:
 
 ```python
 try:
-    await mcp.call_tool("notify.event", {
+    await mcp.call_tool("notify_event", {
         "run_id": "task-001",
         "event": "end",
         "message": "任务完成"
@@ -485,9 +488,9 @@ send("调试测试", "查看详细请求日志")
 
 | 场景 | 推荐方式 | 原因 |
 |------|---------|------|
-| AI Agent 集成 | MCP 工具 (`notify.event`) | 标准化协议，支持事件流 |
+| AI Agent 集成 | MCP 工具 (`notify_event`) | 标准化协议，支持事件流 |
 | 脚本任务通知 | 库模式 (`send()`) | 简单直接，零配置 |
-| 进度跟踪 | MCP 工具 (`notify.event`) | 结构化数据，支持 run_id 关联 |
+| 进度跟踪 | MCP 工具 (`notify_event`) | 结构化数据，支持 run_id 关联 |
 | 简单告警 | 库模式 (`send()`) | 快速集成 |
 | 多语言环境 | MCP 工具 | 语言无关协议 |
 
