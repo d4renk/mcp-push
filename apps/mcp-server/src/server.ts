@@ -169,10 +169,10 @@ export class McpPushServer {
 
         if (normalizedName === "notify_send") {
           const params = NotifySendSchema.parse(args);
-          result = await this.bridge.callTool("notify.send", params);
+          result = await this.bridge.callTool("notify_send", params);
         } else if (normalizedName === "notify_event") {
           const params = NotifyEventSchema.parse(args);
-          result = await this.bridge.callTool("notify.event", params);
+          result = await this.bridge.callTool("notify_event", params);
         } else {
           throw new Error(`Unknown tool: ${name}`);
         }

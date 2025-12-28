@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+from pathlib import Path
 from typing import Dict
 
 # Import legacy notify module
@@ -29,6 +30,42 @@ def _log_print(*args, **kwargs) -> None:
 
 
 _legacy.print = _log_print
+
+
+def _load_config_sh(path: Path) -> None:
+    if not path.exists():
+        return
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or not line.startswith("export "):
+                continue
+            key_value = line[len("export ") :].strip()
+            if "=" not in key_value:
+                continue
+            key, raw_value = key_value.split("=", 1)
+            key = key.strip()
+            raw_value = raw_value.strip()
+            if not key or key not in _legacy.push_config:
+                continue
+            if (
+                (raw_value.startswith('"') and raw_value.endswith('"'))
+                or (raw_value.startswith("'") and raw_value.endswith("'"))
+            ):
+                raw_value = raw_value[1:-1]
+            _legacy.push_config[key] = raw_value
+    except OSError:
+        return
+
+
+repo_root = Path(__file__).resolve().parents[4]
+_load_config_sh(repo_root / "config.sh")
+_load_config_sh(Path.cwd() / "config.sh")
+
+for key in _legacy.push_config:
+    value = os.getenv(key)
+    if value:
+        _legacy.push_config[key] = value
 
 push_config = _legacy.push_config
 

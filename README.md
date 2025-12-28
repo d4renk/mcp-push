@@ -44,6 +44,18 @@ gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
 
 如果你的 CLI 版本需要显式传输参数，请在 `--` 前追加 `--transport stdio`。
 
+Codex 通过 uvx 安装:
+
+```bash
+codex mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git codexmcp
+```
+
+Claude 通过 uvx 安装:
+
+```bash
+claude mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git claudemcp
+```
+
 Gemini 通过 uvx 安装:
 
 ```bash
@@ -60,6 +72,11 @@ cp config.sh.example config.sh
 ```
 
 环境变量会自动加载，也可直接在 shell 中 export。
+
+## 一次性发送（不走 MCP）
+
+- Python：`python3 -c "from notify import send; send('任务完成','任务完成')"`（确保 `PYTHONPATH` 或在项目根目录）
+- Node：`node -e "require('./sendNotify').sendNotify('任务完成','任务完成')"`
 
 ## 什么时候发送通知
 

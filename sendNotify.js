@@ -152,6 +152,41 @@ const push_config = {
   WXPUSHER_UIDS: '', // wxpusher 的 用户ID，多个用英文分号;分隔 topic_ids 与 uids 至少配置一个才行
 };
 
+function loadConfigSh(path) {
+  const fs = require('node:fs');
+  if (!fs.existsSync(path)) {
+    return;
+  }
+  const content = fs.readFileSync(path, 'utf8');
+  const lines = content.split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.startsWith('export ')) {
+      continue;
+    }
+    const keyValue = trimmed.slice('export '.length).trim();
+    const eqIndex = keyValue.indexOf('=');
+    if (eqIndex <= 0) {
+      continue;
+    }
+    const key = keyValue.slice(0, eqIndex).trim();
+    let rawValue = keyValue.slice(eqIndex + 1).trim();
+    if (!(key in push_config)) {
+      continue;
+    }
+    if (
+      (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+      (rawValue.startsWith("'") && rawValue.endsWith("'"))
+    ) {
+      rawValue = rawValue.slice(1, -1);
+    }
+    push_config[key] = rawValue;
+  }
+}
+
+loadConfigSh(`${__dirname}/config.sh`);
+loadConfigSh(`${process.cwd()}/config.sh`);
+
 for (const key in push_config) {
   const v = process.env[key];
   if (v) {

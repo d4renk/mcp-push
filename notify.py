@@ -137,6 +137,39 @@ push_config = {
 }
 # fmt: on
 
+
+def _load_config_sh(path: str) -> None:
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if not line.startswith("export "):
+                    continue
+                key_value = line[len("export ") :].strip()
+                if "=" not in key_value:
+                    continue
+                key, raw_value = key_value.split("=", 1)
+                key = key.strip()
+                raw_value = raw_value.strip()
+                if not key or key not in push_config:
+                    continue
+                if (
+                    (raw_value.startswith('"') and raw_value.endswith('"'))
+                    or (raw_value.startswith("'") and raw_value.endswith("'"))
+                ):
+                    raw_value = raw_value[1:-1]
+                push_config[key] = raw_value
+    except OSError:
+        return
+
+
+_load_config_sh(os.path.join(os.path.dirname(__file__), "config.sh"))
+_load_config_sh(os.path.join(os.getcwd(), "config.sh"))
+
 for k in push_config:
     if os.getenv(k):
         v = os.getenv(k)
