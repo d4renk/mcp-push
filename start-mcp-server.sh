@@ -6,4 +6,4 @@ if [ -f "$(dirname "$0")/config.sh" ]; then
 fi
 
 # Start MCP server
-exec python3 "$(dirname "$0")/server.py"
+exec python3 "$(dirname "$0")/src/server.py"

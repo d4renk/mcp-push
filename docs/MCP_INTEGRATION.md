@@ -668,7 +668,7 @@ with push_duration.labels(channel='telegram').time():
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY notify.py .
+COPY src/notify.py .
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt

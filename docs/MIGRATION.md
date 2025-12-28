@@ -41,7 +41,7 @@ export TG_USER_ID="your-user-id"
 **迁移前（库模式）**：
 
 ```python
-from notify import send
+from src.notify import send
 
 # 简单消息推送
 send("任务完成", "已生成 PDF 报告，耗时 3.2s")
@@ -106,7 +106,7 @@ await mcpClient.callTool('notify_event', {
 **迁移前（库模式 - 只能发送完成通知）**：
 
 ```python
-from notify import send
+from src.notify import send
 
 # 处理数据...
 result = process_data()
@@ -215,7 +215,7 @@ mcp-push 通过**适配器层**保证向后兼容：
 
 ```python
 # 旧代码仍然可以继续工作
-from notify import send
+from src.notify import send
 send("测试", "这仍然有效")
 
 # 新代码使用 MCP 工具
@@ -374,7 +374,7 @@ await mcp_client.call_tool("notify_send", {...})
 
 ```python
 # 旧代码保持不变
-from notify import send
+from src.notify import send
 send("旧功能通知", "内容")
 
 # 新功能使用 MCP 工具
@@ -401,7 +401,7 @@ await mcp_client.call_tool("notify_event", {
 # ... 处理逻辑 ...
 
 # 非关键任务：简单通知（暂时保留旧方式）
-from notify import send
+from src.notify import send
 send("日志清理完成", "删除了 100 个旧文件")
 ```
 
@@ -438,7 +438,7 @@ await mcp_client.call_tool("notify_send", {
 - [ ] 测试错误事件推送（`notify_event` 工具，event="error"）
 - [ ] 验证 run_id 关联（同一任务的多个事件使用相同 run_id）
 - [ ] 检查所有渠道是否正常接收消息
-- [ ] 移除代码中的旧 `from notify import send` 导入（如已全量迁移）
+- [ ] 移除代码中的旧 `from src.notify import send` 导入（如已全量迁移）
 - [ ] 更新文档和注释
 
 ## 故障排查

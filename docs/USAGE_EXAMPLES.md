@@ -163,7 +163,7 @@ export TG_USER_ID="your-telegram-id"
 
 ```python
 # 自动推送到两个渠道
-from notify import send
+from src.notify import send
 send("部署成功", "应用版本 v2.0.1 已部署到生产环境")
 ```
 
@@ -285,10 +285,14 @@ Codex 将自动:
 
 # 方式 2: 通过 CLI 注册 MCP 服务器
 # Codex / Claude / Gemini
-# codex mcp add mcp-push -- python3 $(pwd)/server.py
-# claude mcp add mcp-push -- python3 $(pwd)/server.py
-# gemini mcp add mcp-push -- python3 $(pwd)/server.py
+# codex mcp add mcp-push -- python3 $(pwd)/src/server.py
+# claude mcp add mcp-push -- python3 $(pwd)/src/server.py
+# gemini mcp add mcp-push -- python3 $(pwd)/src/server.py
 # 如果 CLI 需要显式传输参数，可在 `--` 前追加: --transport stdio
+# 也可使用 uvx 直接安装并注册:
+# codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
+# claude mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
+# gemini mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
 ```
 
 ## 场景 6: 错误处理与重试
@@ -310,7 +314,7 @@ except Exception as e:
 ### 6.2 Python 库模式的状态聚合
 
 ```python
-from notify import send
+from src.notify import send
 
 # send() 函数内部已实现渠道隔离
 # 单个渠道失败不影响其他渠道
@@ -343,7 +347,7 @@ send("测试通知", "这是一条测试消息")
 ### 7.2 Python 渠道扩展示例
 
 ```python
-# 在 notify.py 中添加新渠道
+# 在 src/notify.py 中添加新渠道
 def custom_channel(title: str, content: str) -> None:
     """
     自定义渠道实现模板
@@ -415,7 +419,7 @@ send("通知", "纯粹的通知内容")
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY notify.py requirements.txt ./
+COPY src/notify.py requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 环境变量通过 docker run -e 传入
@@ -445,7 +449,7 @@ services:
 
 ```python
 # Python
-from notify import send
+from src.notify import send
 send("测试通知", "如果你收到这条消息，说明配置成功")
 ```
 
@@ -458,11 +462,11 @@ node -e "require('./sendNotify').sendNotify('测试通知', '配置成功')"
 
 ```python
 # 只测试钉钉
-from notify import dingding_bot
+from src.notify import dingding_bot
 dingding_bot("测试", "钉钉推送测试")
 
 # 只测试 Telegram
-from notify import telegram_bot
+from src.notify import telegram_bot
 telegram_bot("测试", "Telegram 推送测试")
 ```
 
@@ -476,7 +480,7 @@ logging.basicConfig(level=logging.DEBUG)
 import http.client as http_client
 http_client.HTTPConnection.debuglevel = 1
 
-from notify import send
+from src.notify import send
 send("调试测试", "查看详细请求日志")
 ```
 

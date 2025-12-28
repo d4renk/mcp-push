@@ -24,22 +24,40 @@ pip install -r requirements.txt
 Codex:
 
 ```bash
-codex mcp add mcp-push -- python3 $(pwd)/server.py
+codex mcp add mcp-push -- python3 $(pwd)/src/server.py
 ```
 
 Claude:
 
 ```bash
-claude mcp add mcp-push -- python3 $(pwd)/server.py
+claude mcp add mcp-push -- python3 $(pwd)/src/server.py
 ```
 
 Gemini:
 
 ```bash
-gemini mcp add mcp-push -- python3 $(pwd)/server.py
+gemini mcp add mcp-push -- python3 $(pwd)/src/server.py
 ```
 
 如果你的 CLI 版本需要显式传输参数，请把 `--transport stdio` 放在 `--` 之后，作为 MCP 服务器的参数传入。
+
+Codex 通过 uvx 安装:
+
+```bash
+codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
+```
+
+Claude 通过 uvx 安装:
+
+```bash
+claude mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
+```
+
+Gemini 通过 uvx 安装:
+
+```bash
+gemini mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push --transport stdio
+```
 
 ## 卸载
 
@@ -74,7 +92,7 @@ cp config.sh.example config.sh
 
 ## 一次性发送（不走 MCP）
 
-- Python：`python3 -c "from notify import send; send('任务完成','任务完成')"`（确保 `PYTHONPATH` 或在项目根目录）
+- Python：`python3 -c "from src.notify import send; send('任务完成','任务完成')"`（确保 `PYTHONPATH` 或在项目根目录）
 - Node：`node -e "require('./sendNotify').sendNotify('任务完成','任务完成')"`
 
 ## 什么时候发送通知

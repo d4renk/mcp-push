@@ -11,7 +11,10 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import notify
+try:
+    from . import notify
+except ImportError:  # Allow running as a script from src/
+    import notify
 
 
 class MCPAdapter:
@@ -46,6 +49,8 @@ class MCPServer:
     def __init__(self):
         self.tools = self._register_tools()
         self.prompt_text = self._load_prompt_text()
+        self.server_info = {"name": "mcp-push", "version": "1.0.0"}
+        self.capabilities = {"tools": {}, "prompts": {}}
 
     def _register_tools(self) -> List[Dict[str, Any]]:
         """注册 MCP 工具"""
@@ -122,6 +127,15 @@ class MCPServer:
                     "content": [{"type": "text", "text": self.prompt_text}],
                 }
             ],
+        }
+
+    def handle_initialize(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """处理 initialize 请求"""
+        _ = request
+        return {
+            "protocolVersion": "2024-11-05",
+            "capabilities": self.capabilities,
+            "serverInfo": self.server_info,
         }
 
     def handle_tools_call(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -296,8 +310,17 @@ class MCPServer:
                     break
                 request, framed = parsed
                 method = request.get("method")
+                request_id = request.get("id")
+                use_jsonrpc = "jsonrpc" in request or "id" in request
 
-                if method == "tools/list":
+                response = None
+                error = None
+                if method == "initialize":
+                    params = request.get("params", {})
+                    response = self.handle_initialize(params)
+                elif method == "initialized":
+                    response = None
+                elif method == "tools/list":
                     response = self.handle_tools_list()
                 elif method == "prompts/list":
                     response = self.handle_prompts_list()
@@ -308,11 +331,15 @@ class MCPServer:
                     params = request.get("params", {})
                     response = self.handle_tools_call(params)
                 else:
-                    response = {
-                        "error": {"code": -32601, "message": f"Method not found: {method}"}
-                    }
+                    error = {"code": -32601, "message": f"Method not found: {method}"}
 
-                self._write_response(response, framed)
+                self._write_response(
+                    response,
+                    framed,
+                    use_jsonrpc=use_jsonrpc,
+                    request_id=request_id,
+                    error=error,
+                )
 
             except json.JSONDecodeError as e:
                 error_response = {
@@ -372,8 +399,25 @@ class MCPServer:
         return body
 
     @staticmethod
-    def _write_response(response: Dict[str, Any], framed: bool) -> None:
-        payload = json.dumps(response, ensure_ascii=False).encode("utf-8")
+    def _write_response(
+        response: Optional[Dict[str, Any]],
+        framed: bool,
+        use_jsonrpc: bool = False,
+        request_id: Optional[Any] = None,
+        error: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        if response is None and error is None:
+            return
+        payload_obj: Dict[str, Any]
+        if use_jsonrpc:
+            if error:
+                payload_obj = {"jsonrpc": "2.0", "id": request_id, "error": error}
+            else:
+                payload_obj = {"jsonrpc": "2.0", "id": request_id, "result": response}
+        else:
+            payload_obj = response or {"error": error}
+
+        payload = json.dumps(payload_obj, ensure_ascii=False).encode("utf-8")
         if framed:
             header = f"Content-Length: {len(payload)}\r\n\r\n".encode("ascii")
             sys.stdout.buffer.write(header + payload)

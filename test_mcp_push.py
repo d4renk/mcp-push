@@ -39,7 +39,7 @@ def test_mcp_server():
     
     # Start server process
     process = subprocess.Popen(
-        [sys.executable, "server.py"],
+        [sys.executable, "src/server.py"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -66,9 +66,11 @@ def test_mcp_server():
             try:
                 data = json.loads(line)
                 print(f"[Client] Received JSON: {json.dumps(data, ensure_ascii=False)}")
+                if "result" in data:
+                    return data["result"]
                 return data
             except json.JSONDecodeError:
-                # Likely console output from notify.py
+                # Likely console output from src/notify.py
                 print(f"[Client] Received LOG: {line}")
                 # We return it as a special type or just continue reading if we only want JSON
                 # For this test, we want to see logs too, but 'read_response' intends to get the RPC response.
