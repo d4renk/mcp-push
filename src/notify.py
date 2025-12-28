@@ -6,6 +6,8 @@ import hmac
 import json
 import os
 import re
+import shutil
+import subprocess
 import threading
 import time
 import urllib.parse
@@ -138,6 +140,34 @@ push_config = {
 # fmt: on
 
 
+def _load_shell_env() -> None:
+    if os.environ.get("MCP_PUSH_SHELL_ENV", "1") in ("0", "false", "False", "no"):
+        return
+    try:
+        if os.name == "nt":
+            shell = "pwsh" if shutil.which("pwsh") else "powershell"
+            if not shell:
+                return
+            cmd = [shell, "-Command", "Get-ChildItem Env: | ForEach-Object {\"$($_.Name)=$($_.Value)\"}"]
+        else:
+            shell = os.environ.get("SHELL", "")
+            if shell.endswith("zsh"):
+                cmd = [shell, "-lic", "printenv"]
+            elif shell.endswith("bash"):
+                cmd = [shell, "-lc", "printenv"]
+            else:
+                cmd = ["/bin/sh", "-lc", "printenv"]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        for line in proc.stdout.splitlines():
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except Exception:
+        pass
+
+
 def _load_config_sh(path: str) -> None:
     if not os.path.exists(path):
         return
@@ -170,6 +200,7 @@ def _load_config_sh(path: str) -> None:
 _load_config_sh(os.path.join(os.path.dirname(__file__), "config.sh"))
 _load_config_sh(os.path.join(os.getcwd(), "config.sh"))
 
+_load_shell_env()
 for k in push_config:
     if os.getenv(k):
         v = os.getenv(k)
