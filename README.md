@@ -7,9 +7,10 @@
 ## 核心特性
 
 - **MCP 标准化接口**：符合 Model Context Protocol 规范的工具集成
+- **混合架构设计**：TypeScript 协议层 + Python 通知实现层，Unix socket 通信
 - **事件流架构**：支持 `start|update|end|error` 四种事件类型
 - **多渠道并发**：20+ 通知渠道并行推送，最佳努力交付
-- **双语言实现**：Python 和 JavaScript 完整支持
+- **企业级安全**：帧大小限制、Socket 权限控制、超时管理
 - **零侵入集成**：保留原有 API，向后完全兼容
 
 ---
@@ -18,7 +19,8 @@
 
 ### 1. 环境准备
 
-- **Python**: 需要 Python 3.8 或更高版本
+- **Node.js**: 需要 Node.js 16+ 版本（TypeScript 协议层）
+- **Python**: 需要 Python 3.8+ 版本（通知实现层）
 - **Claude Desktop**: 确保已安装并登录 Claude Desktop 应用
 
 ### 2. 获取代码
@@ -28,10 +30,15 @@ git clone https://github.com/d4renk/mcp-push.git
 cd mcp-push
 ```
 
-### 3. 安装依赖
+### 3. 安装依赖与构建
 
 ```bash
-pip install -r requirements.txt
+# 安装 TypeScript 依赖并构建
+npm install
+npm run build
+
+# 安装 Python 依赖
+pip install -r tools/pytools/requirements.txt
 ```
 
 ### 4. 注册 MCP 工具
@@ -39,7 +46,20 @@ pip install -r requirements.txt
 使用 Claude CLI 将 mcp-push 注册到 Claude Desktop：
 
 ```bash
-claude mcp add mcp-push -s user --transport stdio -- python $(pwd)/server.py
+claude mcp add mcp-push -s user --transport stdio -- node $(pwd)/apps/mcp-server/build/index.js
+```
+
+或直接编辑 Claude Desktop 配置文件（`~/Library/Application Support/Claude/claude_desktop_config.json`）：
+
+```json
+{
+  "mcpServers": {
+    "mcp-push": {
+      "command": "node",
+      "args": ["/path/to/mcp-push/apps/mcp-server/build/index.js"]
+    }
+  }
+}
 ```
 
 ### 5. 配置通知渠道
@@ -62,10 +82,10 @@ claude mcp list
 
 看到 `mcp-push: ... - ✓ Connected` 说明安装成功。
 
-你也可以运行内置测试脚本来验证配置是否生效：
+你也可以运行集成测试脚本来验证通信是否正常：
 
 ```bash
-python3 test_mcp_push.py
+python3 test_integration.py
 ```
 
 ---
@@ -160,26 +180,6 @@ await mcp_client.call_tool("notify.event", {
 
 ---
 
-## 库模式调用 (非 MCP 场景)
-
-除了通过 MCP 协议调用，你也作为普通 Python/JS 库直接使用。
-
-**Python**
-
-```python
-from notify import send
-send("任务完成", "已生成 PDF 报告，耗时 3.2s")
-```
-
-**JavaScript**
-
-```javascript
-const { sendNotify } = require('./sendNotify');
-await sendNotify('任务完成', '已生成 PDF 报告，耗时 3.2s');
-```
-
----
-
 <details>
 <summary><strong>📢 支持的通知渠道 (20+) - 点击展开</strong></summary>
 
@@ -246,10 +246,48 @@ export SMTP_PASSWORD="password"
 
 ## 文档索引
 
+- [架构设计](docs/ARCHITECTURE.md) - TypeScript + Python 混合架构详解
 - [MCP 集成架构](docs/MCP_INTEGRATION.md) - 技术实现细节
 - [使用示例](docs/USAGE_EXAMPLES.md) - 更多实战案例
 - [渠道配置指南](docs/CHANNEL_CONFIG.md) - 完整环境变量说明
 - [迁移指南](docs/MIGRATION.md) - 从库模式迁移到 MCP 工具
+
+## 开发指南
+
+**项目结构**
+
+```
+mcp-push/
+├── apps/mcp-server/           # TypeScript MCP 服务器
+│   ├── src/
+│   │   ├── index.ts          # 入口点
+│   │   ├── server.ts         # MCP 工具注册
+│   │   └── bridge/
+│   │       └── pythonProc.ts # Unix socket 桥接
+│   ├── package.json
+│   └── tsconfig.json
+├── tools/pytools/             # Python 通知工作进程
+│   └── src/pytools/
+│       ├── worker.py         # Unix socket 服务器
+│       ├── dispatcher.py     # 工具路由
+│       └── notify_lib.py     # 通知渠道封装
+├── start_worker.py            # Worker 启动器
+├── test_integration.py        # 集成测试
+└── package.json               # Monorepo 根配置
+```
+
+**本地开发**
+
+```bash
+# 监听模式（TypeScript 自动重编译）
+npm run dev
+
+# 运行集成测试
+python3 test_integration.py
+
+# 重新构建
+npm run build
+```
 
 ## 许可证
 
@@ -257,16 +295,33 @@ MIT License
 
 ---
 
+## 架构设计
+
 **工作原理**
 
 ```
-┌─────────────┐      ┌──────────────┐      ┌────────────────┐
-│  AI Agent   │─────▶│  MCP Server  │─────▶│  Notification  │
-│  (任务执行)  │      │  (事件路由)  │      │  Channels (20+)│
-└─────────────┘      └──────────────┘      └────────────────┘
-                             │
-                             ├─────▶ 钉钉机器人
-                             ├─────▶ Telegram Bot
-                             ├─────▶ SMTP 邮件
-                             └─────▶ ... (并发推送)
+┌─────────────┐      ┌──────────────────┐      ┌──────────────┐      ┌────────────────┐
+│  AI Agent   │─────▶│  TypeScript MCP  │─────▶│   Python     │─────▶│  Notification  │
+│  (任务执行)  │ stdio│   Server Layer   │socket│   Worker     │ HTTP │  Channels (20+)│
+└─────────────┘      └──────────────────┘      └──────────────┘      └────────────────┘
+                             │                         │                      │
+                             │                         │                      ├─────▶ 钉钉机器人
+                    MCP Protocol              Unix Socket IPC                 ├─────▶ Telegram Bot
+                    Tool Registration         Content-Length                  ├─────▶ SMTP 邮件
+                    Zod Validation            Framing (JSON-RPC)              └─────▶ ... (并发推送)
 ```
+
+**关键技术栈**
+
+- **协议层** (`apps/mcp-server/`): TypeScript + @modelcontextprotocol/sdk + Zod
+- **实现层** (`tools/pytools/`): Python 3.8+ + requests
+- **通信机制**: Unix Domain Socket (`/tmp/mcp-push-{PID}.sock`)
+- **消息格式**: Content-Length 帧封装的 JSON-RPC
+
+**安全特性**
+
+- Socket 权限限制为 0600（仅所有者可访问）
+- 最大帧大小 10 MB 防止内存耗尽攻击
+- 分段读取处理防止协议失步
+- 超时管理防止内存泄漏
+- 异常恢复机制防止服务崩溃
