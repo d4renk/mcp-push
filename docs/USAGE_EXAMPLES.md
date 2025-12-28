@@ -285,12 +285,10 @@ Codex 将自动:
 
 # 方式 2: 通过 CLI 注册 MCP 服务器
 # Codex / Claude / Gemini
-# codex mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
-# claude mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
-# gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+# codex mcp add mcp-push -- python3 $(pwd)/server.py
+# claude mcp add mcp-push -- python3 $(pwd)/server.py
+# gemini mcp add mcp-push -- python3 $(pwd)/server.py
 # 如果 CLI 需要显式传输参数，可在 `--` 前追加: --transport stdio
-# 也可使用 uvx 直接安装并注册:
-# gemini mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git geminimcp
 ```
 
 ## 场景 6: 错误处理与重试

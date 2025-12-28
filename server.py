@@ -11,8 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "tools", "pytools", "src"))
-from pytools.notify_lib import send, push_config
+import notify
 
 
 class MCPAdapter:
@@ -58,7 +57,11 @@ class MCPServer:
                     "type": "object",
                     "properties": {
                         "title": {"type": "string", "description": "消息标题"},
-                        "content": {"type": "string", "description": "消息内容"}
+                        "content": {"type": "string", "description": "消息内容"},
+                        "ignore_default_config": {
+                            "type": "boolean",
+                            "description": "忽略默认配置（仅使用传入配置）"
+                        }
                     },
                     "required": ["title", "content"]
                 }
@@ -144,6 +147,7 @@ class MCPServer:
         """执行 notify_send 工具"""
         title = args.get("title", "")
         content = args.get("content", "")
+        ignore_default_config = bool(args.get("ignore_default_config", False))
 
         if not title or not content:
             return {
@@ -152,7 +156,9 @@ class MCPServer:
             }
 
         try:
-            result = send(title, content)
+            result = notify.send(title, content, ignore_default_config=ignore_default_config)
+            if not isinstance(result, dict):
+                result = {"errors": {"unknown": "notify.send returned no result"}, "channels": 0}
             errors = result.get("errors", {})
             channels = int(result.get("channels", 0) or 0)
             status = self._status_from_errors(errors, channels)
@@ -207,7 +213,9 @@ class MCPServer:
         title, content = MCPAdapter.event_to_send(args)
 
         try:
-            result = send(title, content)
+            result = notify.send(title, content)
+            if not isinstance(result, dict):
+                result = {"errors": {"unknown": "notify.send returned no result"}, "channels": 0}
             errors = result.get("errors", {})
             channels = int(result.get("channels", 0) or 0)
             status = self._status_from_errors(errors, channels)
@@ -237,27 +245,27 @@ class MCPServer:
     def _get_active_channels(self) -> List[str]:
         """获取当前激活的推送渠道列表"""
         channels = []
-        if push_config.get("DD_BOT_TOKEN") and push_config.get("DD_BOT_SECRET"):
+        if notify.push_config.get("DD_BOT_TOKEN") and notify.push_config.get("DD_BOT_SECRET"):
             channels.append("dingding_bot")
-        if push_config.get("FSKEY"):
+        if notify.push_config.get("FSKEY"):
             channels.append("feishu_bot")
-        if push_config.get("TG_BOT_TOKEN") and push_config.get("TG_USER_ID"):
+        if notify.push_config.get("TG_BOT_TOKEN") and notify.push_config.get("TG_USER_ID"):
             channels.append("telegram_bot")
-        if push_config.get("QYWX_KEY"):
+        if notify.push_config.get("QYWX_KEY"):
             channels.append("wecom_bot")
-        if push_config.get("QYWX_AM"):
+        if notify.push_config.get("QYWX_AM"):
             channels.append("wecom_app")
-        if push_config.get("BARK_PUSH"):
+        if notify.push_config.get("BARK_PUSH"):
             channels.append("bark")
-        if push_config.get("PUSH_KEY"):
+        if notify.push_config.get("PUSH_KEY"):
             channels.append("serverJ")
-        if push_config.get("PUSH_PLUS_TOKEN"):
+        if notify.push_config.get("PUSH_PLUS_TOKEN"):
             channels.append("pushplus_bot")
-        if push_config.get("DEER_KEY"):
+        if notify.push_config.get("DEER_KEY"):
             channels.append("pushdeer")
-        if push_config.get("GOTIFY_URL") and push_config.get("GOTIFY_TOKEN"):
+        if notify.push_config.get("GOTIFY_URL") and notify.push_config.get("GOTIFY_TOKEN"):
             channels.append("gotify")
-        if push_config.get("NTFY_TOPIC"):
+        if notify.push_config.get("NTFY_TOPIC"):
             channels.append("ntfy")
         return channels
 
@@ -280,9 +288,13 @@ class MCPServer:
 
     def run_stdio(self):
         """通过 stdio 运行 MCP Server"""
-        for line in sys.stdin:
+        reader = sys.stdin.buffer
+        while True:
             try:
-                request = json.loads(line.strip())
+                parsed = self._read_request(reader)
+                if parsed is None:
+                    break
+                request, framed = parsed
                 method = request.get("method")
 
                 if method == "tools/list":
@@ -300,19 +312,74 @@ class MCPServer:
                         "error": {"code": -32601, "message": f"Method not found: {method}"}
                     }
 
-                # 发送响应
-                print(json.dumps(response, ensure_ascii=False), flush=True)
+                self._write_response(response, framed)
 
             except json.JSONDecodeError as e:
                 error_response = {
                     "error": {"code": -32700, "message": f"Parse error: {str(e)}"}
                 }
-                print(json.dumps(error_response), flush=True)
+                self._write_response(error_response, framed=False)
             except Exception as e:
                 error_response = {
                     "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
                 }
-                print(json.dumps(error_response), flush=True)
+                self._write_response(error_response, framed=False)
+
+    @staticmethod
+    def _read_request(reader) -> Optional[tuple]:
+        line = reader.readline()
+        if not line:
+            return None
+        if line in (b"\n", b"\r\n"):
+            return MCPServer._read_request(reader)
+
+        if line.lower().startswith(b"content-length:"):
+            body = MCPServer._read_framed_body(reader, first_line=line)
+            return json.loads(body.decode("utf-8")), True
+
+        return json.loads(line.decode("utf-8").strip()), False
+
+    @staticmethod
+    def _read_framed_body(reader, first_line: bytes) -> bytes:
+        headers = {}
+
+        def add_header(header_line: bytes) -> None:
+            try:
+                name, value = header_line.decode("ascii").split(":", 1)
+            except ValueError:
+                return
+            headers[name.strip().lower()] = value.strip()
+
+        add_header(first_line)
+        while True:
+            line = reader.readline()
+            if not line:
+                raise ValueError("Connection closed before headers complete")
+            if line in (b"\n", b"\r\n"):
+                break
+            add_header(line)
+
+        length_str = headers.get("content-length")
+        if not length_str:
+            raise ValueError("Missing Content-Length header")
+        length = int(length_str)
+        if length < 0 or length > 10 * 1024 * 1024:
+            raise ValueError(f"Invalid Content-Length: {length}")
+
+        body = reader.read(length)
+        if len(body) != length:
+            raise ValueError("Connection closed before reading full frame")
+        return body
+
+    @staticmethod
+    def _write_response(response: Dict[str, Any], framed: bool) -> None:
+        payload = json.dumps(response, ensure_ascii=False).encode("utf-8")
+        if framed:
+            header = f"Content-Length: {len(payload)}\r\n\r\n".encode("ascii")
+            sys.stdout.buffer.write(header + payload)
+            sys.stdout.buffer.flush()
+        else:
+            print(payload.decode("utf-8"), flush=True)
 
 
 def main():

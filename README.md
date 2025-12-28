@@ -5,21 +5,18 @@ MCP 通知桥接：将 Agent 结果推送到外部渠道 NOTE: DingTalk, Feishu,
 ## 功能
 
 - MCP 工具：`notify_send`、`notify_event`
-- TypeScript 服务器 + Python Worker (Unix socket)
+- 纯 Python MCP 服务器（stdio）
 - 多渠道并行推送（尽最大努力）
 - 环境变量配置即可使用
 
 ## 环境要求
 
-- Node.js 16+
 - Python 3.8+
 
 ## 安装
 
 ```bash
-npm install
-npm run build
-pip install -r tools/pytools/requirements.txt
+pip install -r requirements.txt
 ```
 
 ## 注册 MCP 服务器
@@ -27,39 +24,22 @@ pip install -r tools/pytools/requirements.txt
 Codex:
 
 ```bash
-codex mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+codex mcp add mcp-push -- python3 $(pwd)/server.py
 ```
 
 Claude:
 
 ```bash
-claude mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+claude mcp add mcp-push -- python3 $(pwd)/server.py
 ```
 
 Gemini:
 
 ```bash
-gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
+gemini mcp add mcp-push -- python3 $(pwd)/server.py
 ```
 
 如果你的 CLI 版本需要显式传输参数，请把 `--transport stdio` 放在 `--` 之后，作为 MCP 服务器的参数传入。
-
-Codex 通过 uvx 安装:
-
-```bash
-codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git codexmcp --transport stdio
-```
-
-Claude 通过 uvx 安装:
-
-```bash
-claude mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git claudemcp --transport stdio
-```
-
-Gemini 通过 uvx 安装:
-
-```bash
-gemini mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git geminimcp --transport stdio
 
 ## 卸载
 
@@ -79,7 +59,6 @@ Gemini:
 
 ```bash
 gemini mcp remove mcp-push
-```
 ```
 
 ## 配置渠道
@@ -142,4 +121,3 @@ cp config.sh.example config.sh
 ## 测试
 
 - MCP server (Python stdio): `python3 test_mcp_push.py`
-- Python worker socket: `python3 test_integration.py`

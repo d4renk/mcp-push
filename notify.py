@@ -1086,6 +1086,18 @@ def add_notify_function():
     return notify_function
 
 
+def _run_notify_channel(mode, title, content, errors, errors_lock):
+    name = getattr(mode, "__name__", "unknown")
+    try:
+        result = mode(title, content)
+        if result:
+            with errors_lock:
+                errors[name] = str(result)
+    except Exception as exc:
+        with errors_lock:
+            errors[name] = str(exc)
+
+
 def send(title: str, content: str, ignore_default_config: bool = False, **kwargs):
     if kwargs:
         global push_config
@@ -1096,26 +1108,40 @@ def send(title: str, content: str, ignore_default_config: bool = False, **kwargs
 
     if not content:
         print(f"{title} 推送内容为空！")
-        return
+        return {"errors": {"input": "content is empty"}, "channels": 0}
 
     # 根据标题跳过一些消息推送，环境变量：SKIP_PUSH_TITLE 用回车分隔
     skipTitle = os.getenv("SKIP_PUSH_TITLE")
     if skipTitle:
         if title in re.split("\n", skipTitle):
             print(f"{title} 在SKIP_PUSH_TITLE环境变量内，跳过推送！")
-            return
+            return {"errors": {"skipped": "title skipped by SKIP_PUSH_TITLE"}, "channels": 0}
 
     hitokoto = push_config.get("HITOKOTO")
     if str(hitokoto).lower() != "false":
         content += "\n\n" + one()
 
     notify_function = add_notify_function()
-    ts = [
-        threading.Thread(target=mode, args=(title, content), name=mode.__name__)
-        for mode in notify_function
-    ]
-    [t.start() for t in ts]
-    [t.join() for t in ts]
+    if not notify_function:
+        return {"errors": {"config": "no notification channels configured"}, "channels": 0}
+
+    errors = {}
+    errors_lock = threading.Lock()
+    ts = []
+    for mode in notify_function:
+        ts.append(
+            threading.Thread(
+                target=_run_notify_channel,
+                args=(mode, title, content, errors, errors_lock),
+                name=mode.__name__,
+            )
+        )
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+
+    return {"errors": errors, "channels": len(notify_function)}
 
 
 def main():

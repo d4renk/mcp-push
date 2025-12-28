@@ -6,4 +6,4 @@ if [ -f "$(dirname "$0")/config.sh" ]; then
 fi
 
 # Start MCP server
-exec node "$(dirname "$0")/apps/mcp-server/build/index.js"
+exec python3 "$(dirname "$0")/server.py"
