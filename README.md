@@ -42,24 +42,44 @@ Gemini:
 gemini mcp add mcp-push -- node $(pwd)/apps/mcp-server/build/index.js
 ```
 
-如果你的 CLI 版本需要显式传输参数，请在 `--` 前追加 `--transport stdio`。
+如果你的 CLI 版本需要显式传输参数，请把 `--transport stdio` 放在 `--` 之后，作为 MCP 服务器的参数传入。
 
 Codex 通过 uvx 安装:
 
 ```bash
-codex mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git codexmcp
+codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git codexmcp --transport stdio
 ```
 
 Claude 通过 uvx 安装:
 
 ```bash
-claude mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git claudemcp
+claude mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git claudemcp --transport stdio
 ```
 
 Gemini 通过 uvx 安装:
 
 ```bash
-gemini mcp add mcp-push --transport stdio -- uvx --from git+https://github.com/d4renk/mcp-push.git geminimcp
+gemini mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git geminimcp --transport stdio
+
+## 卸载
+
+Codex:
+
+```bash
+codex mcp remove mcp-push
+```
+
+Claude:
+
+```bash
+claude mcp remove mcp-push
+```
+
+Gemini:
+
+```bash
+gemini mcp remove mcp-push
+```
 ```
 
 ## 配置渠道
