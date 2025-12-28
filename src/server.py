@@ -4,6 +4,7 @@ MCP Server for mcp-push
 Provides standardized MCP tool interface for notification channels
 """
 
+import builtins
 import json
 import os
 import sys
@@ -11,10 +12,18 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-try:
-    from . import notify
-except ImportError:  # Allow running as a script from src/
-    import notify
+_DEBUG_PATH = os.environ.get("MCP_PUSH_DEBUG_PATH", "/tmp/mcp-push.debug.log")
+_DEBUG_ENABLED = os.environ.get("MCP_PUSH_DEBUG") not in (None, "", "0", "false", "False")
+
+
+def _debug_log(message: str) -> None:
+    if not _DEBUG_ENABLED:
+        return
+    try:
+        with open(_DEBUG_PATH, "a", encoding="utf-8") as handle:
+            handle.write(message + "\n")
+    except Exception:
+        pass
 
 
 class MCPAdapter:
@@ -51,6 +60,42 @@ class MCPServer:
         self.prompt_text = self._load_prompt_text()
         self.server_info = {"name": "mcp-push", "version": "1.0.0"}
         self.capabilities = {"tools": {}, "prompts": {}}
+        self._notify = None
+        self._notify_error = None
+
+    def _get_notify(self):
+        if self._notify is not None or self._notify_error is not None:
+            if self._notify_error is not None:
+                raise self._notify_error
+            return self._notify
+        try:
+            try:
+                from . import notify  # type: ignore
+            except ImportError:
+                # Allow running as a script - add parent dir to path
+                import sys
+                import os
+                parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if parent not in sys.path:
+                    sys.path.insert(0, parent)
+                from src import notify  # type: ignore
+            if hasattr(notify, "_print"):
+                def _stderr_print(*args, **kw):
+                    if "file" not in kw:
+                        kw["file"] = sys.stderr
+                    return builtins.print(*args, **kw)
+                notify._print = _stderr_print
+            self._notify = notify
+            return notify
+        except Exception as exc:
+            self._notify_error = exc
+            raise
+
+    def _notify_error_response(self, message: str) -> Dict[str, Any]:
+        return {
+            "isError": True,
+            "content": [{"type": "text", "text": message}],
+        }
 
     def _register_tools(self) -> List[Dict[str, Any]]:
         """注册 MCP 工具"""
@@ -159,6 +204,10 @@ class MCPServer:
 
     def _execute_send(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """执行 notify_send 工具"""
+        try:
+            notify = self._get_notify()
+        except Exception as exc:
+            return self._notify_error_response(f"notify 模块加载失败: {str(exc)}")
         title = args.get("title", "")
         content = args.get("content", "")
         ignore_default_config = bool(args.get("ignore_default_config", False))
@@ -202,6 +251,10 @@ class MCPServer:
 
     def _execute_event(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """执行 notify_event 工具"""
+        try:
+            notify = self._get_notify()
+        except Exception as exc:
+            return self._notify_error_response(f"notify 模块加载失败: {str(exc)}")
         run_id = args.get("run_id")
         event = args.get("event")
         message = args.get("message")
@@ -258,6 +311,10 @@ class MCPServer:
 
     def _get_active_channels(self) -> List[str]:
         """获取当前激活的推送渠道列表"""
+        try:
+            notify = self._get_notify()
+        except Exception:
+            return []
         channels = []
         if notify.push_config.get("DD_BOT_TOKEN") and notify.push_config.get("DD_BOT_SECRET"):
             channels.append("dingding_bot")
@@ -302,16 +359,19 @@ class MCPServer:
 
     def run_stdio(self):
         """通过 stdio 运行 MCP Server"""
+        _debug_log("mcp-push: run_stdio start")
         reader = sys.stdin.buffer
         while True:
             try:
                 parsed = self._read_request(reader)
                 if parsed is None:
+                    _debug_log("mcp-push: EOF received, exiting")
                     break
                 request, framed = parsed
                 method = request.get("method")
                 request_id = request.get("id")
                 use_jsonrpc = "jsonrpc" in request or "id" in request
+                _debug_log(f"mcp-push: request method={method} framed={framed} jsonrpc={use_jsonrpc} id={request_id}")
 
                 response = None
                 error = None
@@ -319,6 +379,8 @@ class MCPServer:
                     params = request.get("params", {})
                     response = self.handle_initialize(params)
                 elif method == "initialized":
+                    response = None
+                elif method == "notifications/initialized":
                     response = None
                 elif method == "tools/list":
                     response = self.handle_tools_list()
@@ -333,23 +395,26 @@ class MCPServer:
                 else:
                     error = {"code": -32601, "message": f"Method not found: {method}"}
 
-                self._write_response(
-                    response,
-                    framed,
-                    use_jsonrpc=use_jsonrpc,
-                    request_id=request_id,
-                    error=error,
-                )
+                if not (use_jsonrpc and request_id is None):
+                    self._write_response(
+                        response,
+                        framed,
+                        use_jsonrpc=use_jsonrpc,
+                        request_id=request_id,
+                        error=error,
+                    )
 
             except json.JSONDecodeError as e:
                 error_response = {
                     "error": {"code": -32700, "message": f"Parse error: {str(e)}"}
                 }
+                _debug_log(f"mcp-push: JSON decode error: {e}")
                 self._write_response(error_response, framed=False)
             except Exception as e:
                 error_response = {
                     "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
                 }
+                _debug_log(f"mcp-push: internal error: {e}")
                 self._write_response(error_response, framed=False)
 
     @staticmethod
@@ -424,6 +489,7 @@ class MCPServer:
             sys.stdout.buffer.flush()
         else:
             print(payload.decode("utf-8"), flush=True)
+        _debug_log(f"mcp-push: response sent framed={framed} jsonrpc={use_jsonrpc} id={request_id}")
 
 
 def main():
