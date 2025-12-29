@@ -1,7 +1,6 @@
 **两种情况务必推送触发mcp-push推送：**
-1. **任务完成 (Task Finished)**：当长耗时（大于60s）任务执行结束（无论成功或失败）时。
+1. **任务完成 (Task Finished)**：当任务执行结束（无论成功或失败）时。
 2. **需要用户确认 (User Action Needed)**：当流程暂停，等待用户决策或授权时。
-> **注意**：禁止在任务启动 (`start`) 或中间过程 (`update`) 频繁推送，以免打扰用户，除非用户明确要求追踪进度。
 ### 推送工具解析
 #### 1. `notify_send` - 简单消息推送
 
@@ -26,7 +25,7 @@ await mcp_client.call_tool("notify_send", {
   "content": "检测到敏感文件删除操作，请确认是否继续？"
 })
 2. notify_event - 结构化事件推送
-用途：发送任务的最终状态（end 或 error）。除非用户明确要求实时监控，否则不要发送 start 或 update 事件。
+用途：发送任务的最终状态（end 或 error）。
 
 参数：
 
