@@ -2,8 +2,10 @@
 # MCP-Push Hook 卸载脚本
 # 用法: curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/uninstall-hook.sh | bash
 #      或: bash uninstall-hook.sh
+# Version: 1.0.1
 
 set -e
+set -o pipefail
 
 echo "=================================="
 echo "MCP-Push Hook 卸载脚本"
@@ -73,8 +75,15 @@ fi
 
 # 可选：删除日志文件
 echo ""
-read -p "是否删除 Hook 日志文件? (y/N): " -n 1 -r
-echo ""
+if [ -t 0 ]; then
+    # 仅在交互式终端时提示
+    read -p "是否删除 Hook 日志文件? (y/N): " -n 1 -r
+    echo ""
+else
+    # 非交互式时默认不删除
+    REPLY="n"
+    echo "→ 跳过日志文件删除（非交互式模式）"
+fi
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     LOG_FILES=(
         "/tmp/mcp-push-hook.log"
