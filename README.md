@@ -10,6 +10,28 @@ AI 智能体多渠道通知推送服务
 Standard MCP server for sending notifications to 20+ channels: DingTalk, Lark, Telegram, WeCom, Email, etc.
 标准 MCP 服务器，支持钉钉、飞书、Telegram、企业微信、邮件等 20+ 渠道推送。
 
+## 📋 依赖要求 / Dependencies
+
+### 必需依赖 / Required
+- **Python 3.8+** - MCP 服务器运行环境 / MCP server runtime
+- **pip** - Python 包管理器 / Python package manager
+- **requests** - HTTP 请求库 / HTTP library (`pip install requests>=2.31.0`)
+
+### 可选依赖 / Optional
+- **jq** - 自动配置 Hook 设置 / Auto-configure Hook settings
+  ```bash
+  # macOS
+  brew install jq
+
+  # Ubuntu/Debian
+  sudo apt-get install jq
+
+  # CentOS/RHEL
+  sudo yum install jq
+  ```
+- **curl** - 在线安装脚本 / Online installation
+- **git** - 克隆仓库（本地安装）/ Clone repo (local install)
+
 ## 🚀 快速开始 / Quick Start
 
 ### 1️⃣ 安装 MCP 服务器 / Install MCP Server
