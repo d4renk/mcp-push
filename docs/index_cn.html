@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Hooks 完整指南</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --code-bg: #1e1e1e;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-color);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 0;
+        }
+
+        .toc {
+            padding: 0 1.5rem;
+        }
+
+        .toc h3 {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            display: block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .toc a:hover {
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .toc li li a {
+            padding-left: 2rem;
+            font-size: 0.85rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - var(--sidebar-width));
+        }
+
+        .section {
+            background: var(--surface-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: var(--secondary-color);
+            margin-top: 2rem;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg) !important;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            border: 1px solid #333;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            color: var(--error-color);
+            font-family: 'Fira Code', 'Consolas', monospace;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: var(--surface-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: var(--bg-color);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Alert Boxes */
+        .warning {
+            background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid var(--warning-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .warning::before {
+            content: "⚠️";
+            font-size: 1.5rem;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+        }
+
+        .warning h4 {
+            color: #92400e;
+            margin-left: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .warning p {
+            color: #92400e;
+            margin-left: 2rem;
+            margin-bottom: 0;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 0.2rem;
+        }
+
+        .tag.success {
+            background: var(--success-color);
+        }
+
+        .tag.warning {
+            background: var(--warning-color);
+        }
+
+        .tag.error {
+            background: var(--error-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .main-content {
+                max-width: 100%;
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Progress indicator */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+
+        /* Back to top button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Icons */
+        .icon {
+            margin-right: 0.5rem;
+        }
+
+        /* Step indicators */
+        .step-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        /* Feature cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    
+    <header class="header">
+        <h1><i class="fas fa-code icon"></i>Claude Code Hooks 完整指南</h1>
+        <p>透过注册 shell 命令，客制化并扩展您的 Claude Code 工作流程</p>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+            <div class="toc">
+                <h3><i class="fas fa-list icon"></i>目录</h3>
+                <ul>
+                    <li><a href="#overview">📋 总览</a>
+                        <ul>
+                            <li><a href="#what-is-hooks">什么是 Hooks？</a></li>
+                            <li><a href="#why-hooks">为什么要使用 Hooks？</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#tutorial">🚀 入门教学</a>
+                        <ul>
+                            <li><a href="#step1">步骤 1：第一个 Hook</a></li>
+                            <li><a href="#step2">步骤 2：使用匹配器</a></li>
+                            <li><a href="#step3">步骤 3：与 Claude 互动</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#concepts">🏗️ 核心概念</a>
+                        <ul>
+                            <li><a href="#lifecycle">事件生命周期</a></li>
+                            <li><a href="#input">Hook 输入</a></li>
+                            <li><a href="#output">Hook 输出</a></li>
+                            <li><a href="#config">设定档位置</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#examples">💡 实用范例库</a></li>
+                    <li><a href="#execution">⚙️ 执行细节</a></li>
+                    <li><a href="#advanced">🔧 进阶功能</a></li>
+                    <li><a href="#security">🛡️ 安全考量</a></li>
+                    <li><a href="#troubleshooting">🔍 疑难排解</a></li>
+                    <li><a href="#best-practices">✨ 最佳实践</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <section id="overview" class="section">
+                <h2><i class="fas fa-info-circle icon"></i>总览</h2>
+                
+                <h3 id="what-is-hooks">什么是 Hooks？</h3>
+                <p>Hooks 是您定义的 shell 命令，它们会在 Claude Code 生命周期的特定时间点自动执行。您可以把它们想像成是为您的 AI 程式设计伙伴设定的「自动化规则」或「触发器」。</p>
+                <p>与其在提示中反复告诉 Claude 要遵守某些规则，不如将这些规则编码为 Hooks，使其成为您开发环境中可靠且自动化的一部分。</p>
+
+                <h3 id="why-hooks">为什么要使用 Hooks？</h3>
+                <p>Hooks 让您能够对 Claude Code 的行为进行确定性的控制，确保某些动作总是会发生。常见的使用情境包括：</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">✍️</div>
+                        <h4>自动格式化</h4>
+                        <p>在 Claude 每次编辑完毕后，自动对 .ts 档案执行 prettier，或对 .go 档案执行 gofmt。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔔</div>
+                        <h4>自订通知</h4>
+                        <p>当 Claude 等待您的指令或执行权限时，透过系统通知或声音提醒您。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h4>安全防护</h4>
+                        <p>阻止 Claude 执行危险的命令（例如 rm -rf）或修改生产环境的设定档。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <h4>合规性记录</h4>
+                        <p>追踪所有由 Claude 执行的 shell 命令，以满足稽核或除错需求。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tutorial" class="section">
+                <h2><i class="fas fa-graduation-cap icon"></i>入门教学</h2>
+                <p>本教学将引导您建立三个 Hooks，从简单到复杂，逐步掌握核心概念。</p>
+
+                <h3 id="step1"><span class="step-indicator">1</span>您的第一个 Hook - 档案变更日志</h3>
+                <p>我们的第一个 Hook 非常简单：每当 Claude 储存一个档案时，我们就在一个日志档中记录下来。这个范例不需要任何外部工具。</p>
+                
+                <ol>
+                    <li>在终端机中执行 <code>/hooks</code> 命令，打开 Hooks 设定介面。</li>
+                    <li>从事件列表中选择 <code>PostToolUse</code>。这个事件会在 Claude 成功执行工具<strong>之后</strong>触发。</li>
+                    <li>选择 <code>+ Add new matcher…</code>，输入 <code>Write|Edit|MultiEdit</code> 来匹配档案操作工具。</li>
+                    <li>选择 <code>+ Add new hook…</code>，然后输入以下命令：</li>
+                </ol>
+
+                <pre><code class="language-bash">echo "Claude edited a file at $(date)" >> ~/.claude/file-edit-log.txt</code></pre>
+
+                <ol start="5">
+                    <li>按 <code>Enter</code> 储存 Hook。系统会询问您储存位置，选择 <code>User settings</code>（使用者设定），这样这个 Hook 就会在您所有的专案中生效。</li>
+                    <li>按 <code>Esc</code> 退出设定介面。</li>
+                </ol>
+
+                <div class="warning">
+                    <h4>验证一下</h4>
+                    <p>现在，请 Claude 随意修改您专案中的任何一个档案。完成后，检查日志档的内容：</p>
+                    <pre><code class="language-bash">cat ~/.claude/file-edit-log.txt</code></pre>
+                    <p>您应该会看到类似 "Claude edited a file at [日期时间]" 的讯息。恭喜，您已经成功建立了第一个 Hook！</p>
+                </div>
+
+                <h3 id="step2"><span class="step-indicator">2</span>加入条件 - 使用匹配器</h3>
+                <p>上一个 Hook 会在<strong>任何</strong>档案被编辑后触发。如果我们只想在特定工具被使用时触发呢？这时就需要使用「匹配器」。</p>
+
+                <ol>
+                    <li>再次执行 <code>/hooks</code>，选择 <code>PostToolUse</code> 事件。</li>
+                    <li>选择 <code>+ Add new matcher…</code>，输入 <code>Bash</code>。这样 Hook 就只会在 Claude 执行 shell 命令后触发。</li>
+                    <li>新增一个 Hook 命令：</li>
+                </ol>
+
+                <pre><code class="language-bash">echo "Claude ran a bash command at $(date)" >> ~/.claude/bash-log.txt</code></pre>
+
+                <h3 id="step3"><span class="step-indicator">3</span>与 Claude 互动 - 记录执行的命令</h3>
+                <p>现在，我们来挑战一个更进阶的 Hook：记录 Claude 尝试执行的所有 shell 命令详细资讯。这个 Hook 会读取 Claude 传递的资料，并需要 <code>jq</code> 工具来解析 JSON。</p>
+
+                <div class="warning">
+                    <h4>先决条件</h4>
+                    <p>请确保您已安装 <code>jq</code>。如果没有，请使用您的套件管理器安装：</p>
+                    <ul>
+                        <li>macOS: <code>brew install jq</code></li>
+                        <li>Ubuntu/Debian: <code>sudo apt-get install jq</code></li>
+                        <li>Windows: 下载自 https://stedolan.github.io/jq/</li>
+                    </ul>
+                </div>
+
+                <ol>
+                    <li>执行 <code>/hooks</code>，这次选择 <code>PreToolUse</code> 事件。这个事件在 Claude <strong>准备</strong>执行一个工具（如 <code>bash</code> 命令）<strong>之前</strong>触发。</li>
+                    <li>为这个 Hook 新增一个匹配器，输入 <code>Bash</code>，这样它就只会监控 shell 命令。</li>
+                    <li>选择 <code>+ Add new hook…</code> 并输入以下命令：</li>
+                </ol>
+
+                <pre><code class="language-bash">jq -r '"COMMAND: \(.tool_input.command) | DESCRIPTION: \(.tool_input.description // "None")"' >> ~/.claude/bash-command-log.txt</code></pre>
+
+                <p>这个命令会从传入的 JSON 资料中提取 <code>command</code> 和 <code>description</code> 栏位，并将其格式化后写入日志档。</p>
+            </section>
+
+            <section id="concepts" class="section">
+                <h2><i class="fas fa-cogs icon"></i>核心概念</h2>
+
+                <h3 id="lifecycle">Hook 事件生命周期</h3>
+                <p>Hooks 可以在 Claude Code 生命周期的多个时间点触发。以下是主要的事件类型：</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>事件名称</th>
+                            <th>触发时机</th>
+                            <th>常见用途</th>
+                            <th>可阻止操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>UserPromptSubmit</code></td>
+                            <td>使用者提交提示后，Claude 处理<strong>之前</strong></td>
+                            <td>验证提示、根据提示内容注入额外上下文</td>
+                            <td><span class="tag success">✅ 是</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>PreToolUse</code></td>
+                            <td>在工具（如 <code>Bash</code>）被执行<strong>之前</strong></td>
+                            <td>阻止危险命令、记录意图、修改命令</td>
+                            <td><span class="tag success">✅ 是</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>PostToolUse</code></td>
+                            <td>在工具执行<strong>之后</strong></td>
+                            <td>记录执行结果、基于结果触发下一步</td>
+                            <td><span class="tag error">❌ 否</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>Notification</code></td>
+                            <td>当需要发送通知时</td>
+                            <td>自订通知方式、声音提醒</td>
+                            <td><span class="tag error">❌ 否</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>Stop</code></td>
+                            <td>当 Claude 完成任务或遇到错误时</td>
+                            <td>清理工作、后续处理</td>
+                            <td><span class="tag success">✅ 是</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>SubagentStop</code></td>
+                            <td>当子代理（Task 工具）完成时</td>
+                            <td>针对子任务的后续处理</td>
+                            <td><span class="tag success">✅ 是</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>PreCompact</code></td>
+                            <td>在 Claude 执行上下文压缩<strong>之前</strong></td>
+                            <td>根据压缩类型执行不同操作、备份重要上下文</td>
+                            <td><span class="tag error">❌ 否</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="input">Hook 的输入 (stdin)</h3>
+                <p>每个 Hook 在执行时，都会透过标准输入（<code>stdin</code>）接收一个包含上下文资讯的 JSON 物件。您可以使用 <code>jq</code> 或其他工具来解析它。</p>
+
+                <h4>通用栏位</h4>
+                <pre><code class="language-json">{
+  "session_id": "string",
+  "transcript_path": "string", // 对话记录档路径
+  "cwd": "string",             // Hook 被调用时的当前工作目录
+  "hook_event_name": "string"  // 触发的 Hook 事件名称
+}</code></pre>
+
+                <h4>PreToolUse 的输入范例</h4>
+                <pre><code class="language-json">{
+  "session_id": "abc123",
+  "transcript_path": "~/.claude/projects/.../session.jsonl",
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "ls -a",
+    "description": "List all files, including hidden ones."
+  }
+}</code></pre>
+            </section>
+
+            <section id="examples" class="section">
+                <h2><i class="fas fa-lightbulb icon"></i>实用范例库</h2>
+                <p>这里有一些可以直接使用的范例，帮助您快速提升效率。</p>
+
+                <h3>1. 程式码自动格式化</h3>
+                <h4>TypeScript/JavaScript (Prettier)</h4>
+                <p>在 Claude 每次修改完档案后，自动执行 Prettier 格式化。</p>
+                
+                <p><strong>设定:</strong></p>
+                <ul>
+                    <li><strong>事件</strong>: <code>PostToolUse</code></li>
+                    <li><strong>匹配器</strong>: <code>Edit|MultiEdit|Write</code></li>
+                    <li><strong>Hook 命令</strong>:</li>
+                </ul>
+                
+                <pre><code class="language-bash"># 检查是否为 JS/TS 档案并执行 prettier
+file_path=$(jq -r '.tool_input.file_path // ""')
+if [[ "$file_path" =~ \.(js|jsx|ts|tsx)$ ]] && [[ -f "$file_path" ]] && [[ -f "package.json" ]]; then
+    npx --no-install prettier --write "$file_path"
+    echo "✨ 已自动格式化档案: $file_path"
+fi</code></pre>
+
+                <h3>2. 安全防护范例</h3>
+                <h4>防止危险命令执行</h4>
+                <p>阻止 Claude 执行可能危险的命令。</p>
+
+                <pre><code class="language-bash">command=$(jq -r '.tool_input.command // ""')
+
+# 检查危险命令模式
+dangerous_patterns=("rm -rf" "sudo rm" "dd if=" "mkfs" "fdisk" "> /dev/")
+
+for pattern in "${dangerous_patterns[@]}"; do
+    if [[ "$command" == *"$pattern"* ]]; then
+        # 使用退出码 2 来阻挡操作，并将 stderr 的内容传递给 Claude
+        echo "🚫 安全警告: 已阻止潜在危险命令: $command" >&2
+        echo "💡 建议: 请使用更安全的替代方案或明确指定档案" >&2
+        exit 2
+    fi
+done
+
+echo "✅ 命令安全检查通过: $command"</code></pre>
+            </section>
+
+            <section id="execution" class="section">
+                <h2><i class="fas fa-play-circle icon"></i>Hook 执行细节</h2>
+
+                <h3>执行环境与限制</h3>
+                <ul>
+                    <li><strong>执行超时</strong>: 预设 60 秒执行限制，可针对个别命令设定 <code>timeout</code> 参数</li>
+                    <li><strong>并行执行</strong>: 所有匹配的 Hooks 会并行执行</li>
+                    <li><strong>执行环境</strong>: 在当前目录中执行，使用 Claude Code 的环境变数</li>
+                    <li><strong>输入方式</strong>: 透过 stdin 接收 JSON 资料</li>
+                </ul>
+
+                <h3>常见工具匹配器</h3>
+                <p>以下是可以在 <code>PreToolUse</code> 和 <code>PostToolUse</code> 中使用的常见工具名称：</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h4>Task</h4>
+                        <p>代理任务</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💻</div>
+                        <h4>Bash</h4>
+                        <p>Shell 命令</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📁</div>
+                        <h4>Glob</h4>
+                        <p>档案模式匹配</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h4>Grep</h4>
+                        <p>内容搜寻</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📖</div>
+                        <h4>Read</h4>
+                        <p>档案读取</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✏️</div>
+                        <h4>Edit, MultiEdit</h4>
+                        <p>档案编辑</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💾</div>
+                        <h4>Write</h4>
+                        <p>档案写入</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h4>WebFetch, WebSearch</h4>
+                        <p>网路操作</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="security" class="section">
+                <h2><i class="fas fa-shield-alt icon"></i>安全考量</h2>
+                
+                <div class="warning">
+                    <h4>免责声明</h4>
+                    <p><strong>风险自负</strong>: Claude Code Hooks 会在您的系统上自动执行任意 shell 命令。使用 Hooks 表示您确认：</p>
+                    <ul>
+                        <li>您对配置的命令承担全部责任</li>
+                        <li>Hooks 可以修改、删除或存取您的使用者帐户能存取的任何档案</li>
+                        <li>恶意或编写不当的 Hooks 可能导致资料遗失或系统损害</li>
+                        <li>Anthropic 不提供任何保证，并且不对 Hook 使用导致的任何损害承担责任</li>
+                        <li>您应该在生产环境使用前，在安全环境中彻底测试 Hooks</li>
+                    </ul>
+                    <p>在添加到您的配置之前，请务必审查并理解任何 Hook 命令。</p>
+                </div>
+
+                <h3>重要安全原则</h3>
+                <ol>
+                    <li><strong>最小权限原则</strong>: 只授予 Hook 完成任务所需的最小权限</li>
+                    <li><strong>输入验证</strong>: 始终验证来自 Claude 的输入资料</li>
+                    <li><strong>避免命令注入</strong>: 如果使用来自 Claude 的资料建构命令，请正确转义</li>
+                    <li><strong>定期审查</strong>: 定期检查您的 Hook 设定和执行日志</li>
+                    <li><strong>使用绝对路径</strong>: 在脚本中尽量使用绝对路径指定命令，避免 PATH 被劫持</li>
+                    <li><strong>避开敏感档案</strong>: 设定规则以跳过 <code>.env</code>, <code>.git/</code>, SSH 金钥等档案</li>
+                </ol>
+            </section>
+
+            <section id="troubleshooting" class="section">
+                <h2><i class="fas fa-bug icon"></i>疑难排解</h2>
+
+                <h3>基本除错步骤</h3>
+                <p>如果您的 Hooks 无法正常运作，请依序检查：</p>
+                
+                <ol>
+                    <li><strong>检查配置</strong> - 执行 <code>/hooks</code> 查看您的 Hook 是否已注册</li>
+                    <li><strong>验证语法</strong> - 确保 JSON 设定有效</li>
+                    <li><strong>测试命令</strong> - 先手动执行 Hook 命令</li>
+                    <li><strong>检查权限</strong> - 确保脚本档案具有执行权限</li>
+                    <li><strong>查看日志</strong> - 使用 <code>claude --debug</code> 查看详细的 Hook 执行资讯</li>
+                </ol>
+
+                <h3>启用详细日志</h3>
+                <p>使用 <code>--debug</code> 标志启动 Claude Code 以查看详细的日志输出：</p>
+                <pre><code class="language-bash">claude --debug</code></pre>
+            </section>
+
+            <section id="best-practices" class="section">
+                <h2><i class="fas fa-star icon"></i>最佳实践总结</h2>
+
+                <h3>✅ 推荐做法</h3>
+                <ol>
+                    <li><strong>从简单开始</strong>: 先实作基本的日志记录，再逐步加入复杂功能</li>
+                    <li><strong>分层设定</strong>: 通用规则放在使用者设定，专案特定规则放在专案设定</li>
+                    <li><strong>充分测试</strong>: 在安全环境中测试所有 Hook 再部署到生产环境</li>
+                    <li><strong>详细注释</strong>: 在设定档中为每个 Hook 添加说明注释</li>
+                    <li><strong>定期维护</strong>: 定期检查和更新 Hook 设定，移除不需要的规则</li>
+                </ol>
+
+                <h3>❌ 避免事项</h3>
+                <ol>
+                    <li><strong>过度复杂化</strong>: 避免在单一 Hook 中包含过多逻辑</li>
+                    <li><strong>忽略错误处理</strong>: 确保 Hook 能够妥善处理异常情况</li>
+                    <li><strong>硬编码路径</strong>: 使用相对路径或环境变数而非绝对路径</li>
+                    <li><strong>忽略效能</strong>: 避免在 Hook 中执行耗时操作</li>
+                    <li><strong>盲目信任</strong>: 不要无条件信任来自外部的 Hook 设定</li>
+                </ol>
+            </section>
+
+            <section class="section">
+                <h2><i class="fas fa-rocket icon"></i>结语</h2>
+                <p>Claude Code Hooks 是一个强大的自动化工具，能够显著提升您的开发效率和程式码品质。透过合理的设定和使用，您可以：</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h4>自动化重复性任务</h4>
+                        <p>格式化程式码、执行测试、产生文件</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h4>增强安全性</h4>
+                        <p>防止危险操作、保护敏感档案</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>提升可见度</h4>
+                        <p>记录操作历史、监控系统状态</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h4>优化工作流程</h4>
+                        <p>整合现有工具链、自订通知机制</p>
+                    </div>
+                </div>
+
+                <p>记住，Hooks 的真正价值在于让您专注于创造性的工作，而将重复性的、规则化的任务交给自动化系统处理。</p>
+                <p>开始您的 Claude Code Hooks 之旅，让 AI 助手成为您开发团队中最可靠的成员！</p>
+
+                <hr style="margin: 2rem 0; border: none; height: 1px; background: var(--border-color);">
+                
+                <h3><i class="fas fa-external-link-alt icon"></i>参考资源</h3>
+                <ul>
+                    <li><a href="https://docs.anthropic.com/zh-TW/docs/claude-code/hooks" target="_blank">Claude Code 官方文件</a></li>
+                    <li><a href="https://stedolan.github.io/jq/tutorial/" target="_blank">jq 官方教学</a></li>
+                    <li><a href="https://google.github.io/styleguide/shellguide.html" target="_blank">Shell 脚本最佳实践</a></li>
+                    <li><a href="https://json-schema.org/" target="_blank">JSON Schema 验证</a></li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <button class="back-to-top" id="backToTop" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+
+            // Back to top button
+            const backToTop = document.getElementById('backToTop');
+            if (winScroll > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Highlight current section in TOC
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc a[href="#${id}"]`);
+                    
+                    // Remove active class from all links
+                    document.querySelectorAll('.toc a').forEach(link => {
+                        link.style.fontWeight = 'normal';
+                        link.style.color = 'var(--text-secondary)';
+                    });
+                    
+                    // Add active class to current link
+                    if (tocLink) {
+                        tocLink.style.fontWeight = '600';
+                        tocLink.style.color = 'var(--primary-color)';
+                    }
+                }
+            });
+        }, {
+            rootMargin: '-100px 0px -66%',
+        });
+
+        // Observe all sections
+        document.querySelectorAll('section[id]').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

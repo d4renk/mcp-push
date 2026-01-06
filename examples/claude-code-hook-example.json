@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "run-complete": {
+      "command": "~/.claude/hooks/completion-hook.sh",
+      "args": ["end", "{{message}}", "{{run_id}}", "{{started_at}}"],
+      "description": "Task completed successfully"
+    },
+    "run-error": {
+      "command": "~/.claude/hooks/completion-hook.sh",
+      "args": ["error", "{{message}}", "{{run_id}}", "{{started_at}}"],
+      "description": "Task failed with error"
+    },
+    "run-needs-action": {
+      "command": "~/.claude/hooks/completion-hook.sh",
+      "args": ["needs_user_action", "{{message}}", "{{run_id}}", "{{started_at}}"],
+      "description": "Waiting for user confirmation"
+    }
+  }
+}
