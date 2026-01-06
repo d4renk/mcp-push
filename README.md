@@ -1,344 +1,174 @@
 # mcp-push
 
-Multi-channel notification server for AI agents (Claude, Codex, Gemini)
-AI 智能体多渠道通知推送服务
+**Unified Notification Gateway for AI Agents**
+**AI 智能体统一通知推送服务**
 
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-Server-blue)](https://modelcontextprotocol.io)
 
-Standard MCP server for sending notifications to 20+ channels: DingTalk, Lark, Telegram, WeCom, Email, etc.
-标准 MCP 服务器，支持钉钉、飞书、Telegram、企业微信、邮件等 20+ 渠道推送。
+**mcp-push** is a standard MCP server and hook utility designed to bridge AI Agents (like Claude Code, Cursor) with your daily communication tools. It supports sending notifications to **20+ channels** including DingTalk, Lark, Telegram, WeCom, and Email.
+**mcp-push** 是一个标准的 MCP 服务器和 Hook 工具，旨在连接 AI 智能体（如 Claude Code, Cursor）与您的日常通讯工具。支持向钉钉、飞书、Telegram、企业微信、邮件等 **20+ 个渠道**发送通知。
 
-## 📋 依赖要求 / Dependencies
+---
 
-### 必需依赖 / Required
-- **Python 3.8+** - MCP 服务器运行环境 / MCP server runtime
-- **pip** - Python 包管理器 / Python package manager
-- **requests** - HTTP 请求库 / HTTP library (`pip install requests>=2.31.0`)
+## ✨ Key Features / 核心特性
 
-### 可选依赖 / Optional
-- **jq** - 自动配置 Hook 设置 / Auto-configure Hook settings
-  ```bash
-  # macOS
-  brew install jq
+- **🔌 20+ Channels / 全渠道支持**: DingTalk, Lark, WeCom, Telegram, Email, Bark, ServerChan, and more.
+- **🤖 Zero-Config Hook / 零配置 Hook**: Automatically detects long-running tasks (>60s) in Claude Code and notifies you upon completion or failure.
+- **📊 Structured Events / 结构化事件**: Supports structured JSON logging (`notify_event`) for detailed task tracking.
+- **🚀 Easy Setup / 极简安装**: Install via `uvx` or one-line shell script.
 
-  # Ubuntu/Debian
-  sudo apt-get install jq
+---
 
-  # CentOS/RHEL
-  sudo yum install jq
-  ```
-- **curl** - 在线安装脚本 / Online installation
-- **git** - 克隆仓库（本地安装）/ Clone repo (local install)
+## 🚀 Quick Start / 快速开始
 
-## 🚀 快速开始 / Quick Start
+### 1️⃣ Install MCP Server / 安装 MCP 服务器
 
-### 1️⃣ 安装 MCP 服务器 / Install MCP Server
+Using `uvx` (Recommended):
+使用 `uvx` 安装（推荐）：
 
 ```bash
 codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push
 ```
 
-### 2️⃣ 🤖 配置自动通知 / Setup Auto-Notification
+### 2️⃣ Configure Auto-Notify Hook / 配置自动通知 Hook
 
-安装 Claude Code Stop Hook，自动配置任务完成推送：
-Install Claude Code Stop Hook - automatically configures task completion notifications:
+Automatically receive alerts when long tasks finish.
+在长耗时任务完成时自动接收通知。
 
 ```bash
-# 在线一键安装 / Online one-click install
+# One-click install / 一键安装
 curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/install-hook.sh | bash
-
-# 或本地安装 / Or local install
-git clone https://github.com/d4renk/mcp-push.git
-cd mcp-push
-bash install-hook.sh
 ```
 
-脚本会自动完成：
-The script automatically:
-- ✅ 下载 Hook 脚本到 `~/.claude/hooks/` / Downloads Hook script
-- ✅ 自动配置 `~/.claude/settings.json` / Auto-configures settings.json
-- ✅ 设置正确的文件权限 / Sets correct permissions
+> **Note**: Requires `jq` for auto-configuration.
+> **注意**: 需要安装 `jq` 工具以进行自动配置。
 
-> **提示 / Note**: 需要安装 `jq` 工具来自动配置。如果没有 jq，脚本会提示手动配置步骤。
-> Requires `jq` for auto-config. Without jq, manual steps will be shown.
+### 3️⃣ Setup Channels / 配置推送渠道
 
-**Hook 功能 / Hook Features:**
-- ✅ 自动检测长耗时任务（>60s）/ Auto-detect long-running tasks (>60s)
-- 🔔 任务完成时自动推送 / Auto-notify on task completion
-- ⚠️ 错误发生时立即通知 / Instant notification on errors
-- 👤 需要用户确认时提醒 / Alert when user action needed
-
-### 3️⃣ 配置通知渠道 / Configure Channels
-
-编辑配置文件 / Edit configuration:
+Create a `config.sh` file to define your webhook credentials.
+创建 `config.sh` 文件定义您的 Webhook 凭证。
 
 ```bash
 cp config.sh.example config.sh
 vim config.sh
 ```
 
-**示例配置 / Example Configuration:**
+**Minimal Config Example / 最小配置示例:**
 
 ```bash
-# 钉钉机器人 / DingTalk Bot
-export DD_BOT_TOKEN="your-dingtalk-token"
-export DD_BOT_SECRET="your-dingtalk-secret"
+# DingTalk / 钉钉
+export DD_BOT_TOKEN="your-token"
+export DD_BOT_SECRET="your-secret"
 
-# 飞书机器人 / Lark Bot
-export FSKEY="your-lark-webhook-key"
+# Lark / 飞书
+export FSKEY="your-webhook-key"
 
-# Telegram Bot
-export TG_BOT_TOKEN="your-telegram-bot-token"
-export TG_USER_ID="your-telegram-user-id"
-
-# 企业微信机器人 / WeCom Bot
-export QYWX_KEY="your-wecom-webhook-key"
-
-# Bark (iOS)
-export BARK_PUSH="https://api.day.app/your-device-code"
-
-# Server酱 / ServerChan
-export PUSH_KEY="your-server-chan-key"
-
-# ====== Hook 高级配置 / Hook Advanced Settings ======
-# 启用结构化消息推送（默认 true）/ Enable structured event notifications
-export MCP_PUSH_STRUCTURED=true
-
-# MCP 调用超时时间（秒，默认 10）/ MCP call timeout in seconds
-export MCP_PUSH_TIMEOUT_SEC=10
-
-# Hook 错误日志路径（可选）/ Hook error log path (optional)
-export MCP_PUSH_HOOK_LOG_PATH="/tmp/mcp-push-hook.log"
+# Telegram
+export TG_BOT_TOKEN="your-bot-token"
+export TG_USER_ID="your-user-id"
 ```
 
-**完整渠道配置 / Full channel list:** [docs/CHANNEL_CONFIG.md](docs/CHANNEL_CONFIG.md)
+*See [docs/CHANNEL_CONFIG.md](docs/CHANNEL_CONFIG.md) for all supported channels.*
 
-### 4️⃣ 测试推送 / Test Notification
+---
 
-```bash
-# Python 测试 / Python test
-python test_mcp_push.py
+## 📡 Usage / 使用指南
 
-# 或通过 Hook 测试 / Or test via Hook
-python ~/.claude/hooks/mcp-call.py mcp-push notify_send \
-  --title "测试 / Test" \
-  --content "Hello from mcp-push!"
-```
-
-## 📡 使用方法 / Usage
-
-### notify_send - 简单消息 / Simple Alerts
-
-适用于一次性通知、任务完成提醒
-For one-time alerts and task completion notices
+### 1. Simple Notification / 简单通知 (`notify_send`)
+Best for general alerts or one-time messages.
+适用于通用提醒或一次性消息。
 
 ```javascript
+// MCP Tool Call
 use_mcp_tool("notify_send", {
-  "title": "构建成功 / Build Success",
-  "content": "部署完成，耗时 3m42s / Deployment completed in 3m42s"
+  "title": "🚀 Build Success / 构建成功",
+  "content": "Deployment finished in 3m 20s. / 部署耗时 3分20秒"
 });
 ```
 
-**Python 示例 / Python Example:**
-
-```python
-await mcp.call_tool("notify_send", {
-  "title": "✅ 数据分析完成",
-  "content": "共处理 10,000 条记录\n发现 127 个异常\n报告: https://..."
-})
-```
-
-### notify_event - 事件追踪 / Task Tracking
-
-适用于追踪长时间运行任务的状态
-For tracking long-running task states
+### 2. Event Tracking / 事件追踪 (`notify_event`)
+Best for structured logs and task lifecycle tracking (Start -> Update -> End).
+适用于结构化日志和任务生命周期追踪。
 
 ```javascript
+// MCP Tool Call
 use_mcp_tool("notify_event", {
-  "run_id": "data-analysis-001",
-  "event": "end",  // start | update | end | error
-  "message": "分析完成，发现 127 个异常 / Analysis complete, 127 anomalies found",
+  "run_id": "task-2024-001",
+  "event": "end",  // Options: start | update | end | error
+  "message": "Analysis completed / 分析完成",
   "data": {
-    "total_records": 10000,
-    "anomalies": 127,
-    "duration_ms": 222000
+    "files_processed": 150,
+    "errors_found": 0
   }
 });
 ```
 
-**事件类型 / Event Types:**
-- `start` - 任务开始 / Task started
-- `update` - 进度更新 / Progress update
-- `end` - 任务完成 / Task completed
-- `error` - 任务失败 / Task failed
+---
 
-## 🔧 支持的推送渠道 / Supported Channels
+## 🔌 Supported Channels / 支持渠道
 
-| 渠道 / Channel | 配置变量 / Config | 文档 / Docs |
-|------|---------|------|
-| 钉钉机器人 / DingTalk | `DD_BOT_TOKEN`, `DD_BOT_SECRET` | [官方文档](https://developers.dingtalk.com/document/app/custom-robot-access) |
-| 飞书机器人 / Lark | `FSKEY` | [官方文档](https://www.feishu.cn/hc/zh-CN/articles/360024984973) |
-| Telegram Bot | `TG_BOT_TOKEN`, `TG_USER_ID` | [官方文档](https://core.telegram.org/bots) |
-| 企业微信机器人 / WeCom | `QYWX_KEY` | [官方文档](https://work.weixin.qq.com/api/doc/90000/90136/91770) |
-| Bark (iOS) | `BARK_PUSH` | [官方网站](https://bark.day.app) |
-| Server酱 / ServerChan | `PUSH_KEY` | [官方网站](https://sct.ftqq.com) |
-| PushPlus | `PUSH_PLUS_TOKEN` | [官方网站](http://www.pushplus.plus) |
-| Gotify | `GOTIFY_URL`, `GOTIFY_TOKEN` | [官方网站](https://gotify.net) |
-| Ntfy | `NTFY_URL`, `NTFY_TOPIC` | [官方网站](https://ntfy.sh) |
-| WxPusher | `WXPUSHER_APP_TOKEN` | [官方网站](https://wxpusher.zjiecode.com) |
-| Email (SMTP) | `SMTP_SERVER`, `SMTP_EMAIL` | - |
+| Service / 服务 | Config Variable / 配置变量 | Docs / 文档 |
+| :--- | :--- | :--- |
+| **DingTalk (钉钉)** | `DD_BOT_TOKEN`, `DD_BOT_SECRET` | [Official](https://developers.dingtalk.com/document/app/custom-robot-access) |
+| **Lark (飞书)** | `FSKEY` | [Official](https://www.feishu.cn/hc/zh-CN/articles/360024984973) |
+| **WeCom (企微)** | `QYWX_KEY` | [Official](https://work.weixin.qq.com/api/doc/90000/90136/91770) |
+| **Telegram** | `TG_BOT_TOKEN`, `TG_USER_ID` | [Official](https://core.telegram.org/bots) |
+| **Bark (iOS)** | `BARK_PUSH` | [Official](https://bark.day.app) |
+| **ServerChan (Server酱)** | `PUSH_KEY` | [Official](https://sct.ftqq.com) |
+| **Email** | `SMTP_SERVER`, `SMTP_USER`... | - |
+| **Custom Webhook** | `WEBHOOK_URL` | - |
 
-**20+ 渠道完整配置 / Full 20+ channels:** [config.sh.example](config.sh.example)
-
-## 📚 进阶配置 / Advanced Configuration
-
-### Hook 高级选项 / Hook Advanced Options
-
-**结构化推送配置 / Structured Notification Settings:**
-
-| 环境变量 / Variable | 默认值 / Default | 说明 / Description |
-|---------------------|------------------|-------------------|
-| `MCP_PUSH_STRUCTURED` | `true` | 启用结构化事件推送（`notify_event`），失败时降级到 `notify_send`<br>Enable structured event notifications, fallback to simple mode on failure |
-| `MCP_PUSH_TIMEOUT_SEC` | `10` | MCP 调用超时时间（秒）<br>MCP call timeout in seconds |
-| `MCP_PUSH_HOOK_LOG_PATH` | (空) | Hook 错误日志路径，留空则不记录<br>Hook error log path, leave empty to disable logging |
-
-**配置示例 / Configuration Example:**
-
-```bash
-# 在 config.sh 中配置 / Configure in config.sh
-export MCP_PUSH_STRUCTURED=true
-export MCP_PUSH_TIMEOUT_SEC=15
-export MCP_PUSH_HOOK_LOG_PATH="/var/log/mcp-push-hook.log"
-
-# 或通过环境变量 / Or via environment variables
-MCP_PUSH_STRUCTURED=false ./your-script.sh
-```
-
-**工作原理 / How It Works:**
-
-1. **优先模式 / Priority Mode** - 当 `MCP_PUSH_STRUCTURED=true` 时：
-   ```
-   尝试 notify_event (结构化) → 失败 → 降级到 notify_send (简单)
-   Try notify_event (structured) → Fail → Fallback to notify_send (simple)
-   ```
-
-2. **简单模式 / Simple Mode** - 当 `MCP_PUSH_STRUCTURED=false` 时：
-   ```
-   直接使用 notify_send (简单消息)
-   Direct notify_send (simple message)
-   ```
-
-3. **超时控制 / Timeout Control** - 防止 Hook 阻塞 Claude Code：
-   - 超时后自动终止 MCP 调用
-   - 不影响 Claude Code 正常流程
-
-### 环境变量加载 / Environment Loading
-
-配置加载优先级（从高到低）/ Priority order (high to low):
-
-1. 环境变量 / Environment variables: `export VAR=value`
-2. 当前目录配置 / Current directory: `./config.sh`
-3. 项目目录配置 / Project directory: `<project>/config.sh`
-4. Shell 环境自动加载 / Auto-load from shell
-
-禁用自动加载 / Disable auto-load:
-```bash
-export MCP_PUSH_SHELL_ENV=0
-```
-
-### 自定义 Webhook / Custom Webhook
-
-```bash
-export WEBHOOK_URL="https://your-webhook.com/notify"
-export WEBHOOK_METHOD="POST"
-export WEBHOOK_CONTENT_TYPE="application/json"
-export WEBHOOK_BODY='{"title": "$title", "content": "$content"}'
-export WEBHOOK_HEADERS='Content-Type: application/json'
-```
-
-### 调试模式 / Debug Mode
-
-```bash
-export MCP_PUSH_DEBUG=1
-export MCP_PUSH_DEBUG_PATH="/tmp/mcp-push.debug.log"
-
-# 启动服务 / Start server
-python src/server.py
-```
-
-## 📁 项目结构 / Project Structure
-
-```
-mcp-push/
-├── src/
-│   ├── server.py              # MCP 服务器实现 / MCP server implementation
-│   ├── notify.py              # 推送渠道实现 / Channel implementations
-│   └── __init__.py
-├── docs/
-│   └── CHANNEL_CONFIG.md      # 渠道配置详细说明 / Detailed channel config
-├── examples/
-│   └── claude-code-hook-example.json
-├── scripts/                   # 工具脚本 / Utility scripts
-├── completion-hook-linux.sh   # Stop Hook 脚本 / Stop Hook script
-├── install-hook.sh            # Hook 自动安装 / Hook auto-installer
-├── mcp-call.py               # MCP 调用工具 / MCP call utility
-├── config.sh.example         # 配置示例 / Config template
-├── requirements.txt          # Python 依赖 / Dependencies
-└── README.md                 # 本文件 / This file
-```
-
-## 🛠️ 开发 / Development
-
-### 运行测试 / Run Tests
-
-```bash
-# 单元测试 / Unit tests
-python test_mcp_push.py
-
-# Hook 集成测试 / Hook integration test
-python test-hook-integration.py
-
-# 手动 MCP 调用 / Manual MCP call
-python mcp-call.py
-```
-
-### 添加新渠道 / Add New Channel
-
-1. 在 `src/notify.py` 中实现推送函数 / Implement function in `src/notify.py`
-2. 在 `add_notify_function()` 中注册 / Register in `add_notify_function()`
-3. 在 `config.sh.example` 中添加配置示例 / Add config example
-4. 更新文档 / Update documentation
-
-## 🤝 贡献 / Contributing
-
-欢迎提交 Issue 和 Pull Request！
-Issues and Pull Requests are welcome!
-
-1. Fork 本仓库 / Fork the repository
-2. 创建特性分支 / Create feature branch: `git checkout -b feature/AmazingFeature`
-3. 提交更改 / Commit changes: `git commit -m 'Add AmazingFeature'`
-4. 推送到分支 / Push to branch: `git push origin feature/AmazingFeature`
-5. 开启 Pull Request / Open Pull Request
-
-## 📄 许可证 / License
-
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
-This project is licensed under the MIT License - see [LICENSE](LICENSE)
-
-## 🙏 致谢 / Acknowledgments
-
-- Built on [Model Context Protocol](https://modelcontextprotocol.io)
-- Inspired by multiple open-source notification projects
-- Thanks to all contributors
-
-## 📞 联系 / Contact
-
-- Issues: https://github.com/d4renk/mcp-push/issues
-- Repository: https://github.com/d4renk/mcp-push
+*Full list available in [config.sh.example](config.sh.example).*
 
 ---
 
-⭐ **If this project helps you, please give it a star!**
-⭐ **如果这个项目对您有帮助，请给个 Star 支持一下！**
+## ⚙️ Advanced Configuration / 进阶配置
+
+### Hook Behavior / Hook 行为控制
+
+Customize how the Hook interacts with the MCP server via `config.sh`:
+
+```bash
+# Enable structured event notifications (Default: true)
+# 启用结构化事件推送（默认开启，失败自动降级为简单通知）
+export MCP_PUSH_STRUCTURED=true
+
+# MCP Call Timeout (Default: 10s)
+# MCP 调用超时时间（防止阻塞主进程）
+export MCP_PUSH_TIMEOUT_SEC=10
+
+# Error Log Path
+# 错误日志路径
+export MCP_PUSH_HOOK_LOG_PATH="/tmp/mcp-push-hook.log"
+```
+
+### Environment Loading / 环境变量加载
+Configuration is loaded in the following order (higher priority overrides lower):
+配置加载顺序（高优先级覆盖低优先级）：
+1.  **System Env** (`export VAR=...`)
+2.  **Local Config** (`./config.sh`)
+3.  **Project Config** (`/path/to/mcp-push/config.sh`)
+
+---
+
+## 🛠️ Development / 开发与贡献
+
+```bash
+# Install dependencies / 安装依赖
+pip install -r requirements.txt
+
+# Run tests / 运行测试
+python test_mcp_push.py
+
+# Test Hook integration / 测试 Hook 集成
+python test-hook-integration.py
+```
+
+### Contributing
+Pull Requests are welcome! Please ensure you add relevant tests for new channels.
+欢迎提交 PR！添加新渠道时请确保包含相关测试。
+
+## 📄 License
+MIT License. See [LICENSE](LICENSE) for details.
