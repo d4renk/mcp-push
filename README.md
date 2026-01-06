@@ -20,11 +20,17 @@ codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git 
 
 ### 2️⃣ 🤖 配置自动通知 / Setup Auto-Notification
 
-一键安装 Claude Code Stop Hook，自动配置任务完成推送：
-One-click install - automatically configures task completion notifications:
+安装 Claude Code Stop Hook，自动配置任务完成推送：
+Install Claude Code Stop Hook - automatically configures task completion notifications:
 
 ```bash
+# 在线一键安装 / Online one-click install
 curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/install-hook.sh | bash
+
+# 或本地安装 / Or local install
+git clone https://github.com/d4renk/mcp-push.git
+cd mcp-push
+bash install-hook.sh
 ```
 
 脚本会自动完成：
