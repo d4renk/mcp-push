@@ -27,6 +27,10 @@
   Automatically broadcast messages to all configured channels simultaneously.
   自动向所有已配置渠道并发发送消息，确保通知必达。
 
+- **🤖 Runner Completion Hook / 自动任务通知**
+  Automatic notification for long-running tasks (>60s) with model-agnostic handling.
+  自动为长耗时任务（>60秒）发送通知，模型无感知，由 Runner 层自动处理。
+
 ---
 
 ## 🚀 Installation / 安装
@@ -160,6 +164,72 @@ await use_mcp_tool("notify_event", {
 
 - Simple operation completions
   简单操作的完成通知
+
+---
+
+## 🔗 Advanced Integration / 高级集成
+
+### Claude Code Runner Completion Hook
+
+For AI agent platforms like **Claude Code**, **Codex**, or **Gemini**, you can enable **automatic task completion notifications** without requiring the model to manually trigger push events.
+
+对于 **Claude Code**、**Codex** 或 **Gemini** 等 AI 代理平台，您可以启用**自动任务完成通知**功能，无需模型手动触发推送事件。
+
+**How It Works / 工作原理**:
+- Automatically detects when tasks exceed 60 seconds / 自动检测任务耗时是否超过 60 秒
+- Sends notifications on task completion, failure, or user action needed / 在任务完成、失败或需要用户确认时发送通知
+- Model-agnostic: the model focuses on tasks, the runner handles notifications / 模型无感知：模型专注任务执行，通知由 runner 层处理
+
+**Integration Methods / 集成方式**:
+
+1. **Configuration-based (Recommended) / 基于配置（推荐）**
+
+   Install the completion hook script and configure it in your settings.
+   安装完成通知脚本并在设置文件中配置。
+
+   ```bash
+   mkdir -p ~/.claude/hooks
+   cp completion-hook.sh ~/.claude/hooks/
+   chmod +x ~/.claude/hooks/completion-hook.sh
+   ```
+
+   See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for full configuration details.
+   查看 [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) 了解完整配置说明。
+
+2. **Source Code Integration / 源码集成**
+
+   For direct integration into the runner source code.
+   直接集成到 runner 源码中。
+
+   ```typescript
+   import { CompletionHook } from './runner-completion-hook';
+
+   class AgentRunner {
+     private completionHook: CompletionHook;
+
+     async run(task: string) {
+       try {
+         await this.executeTask(task);
+         await this.completionHook.onSuccess('Task completed');
+       } catch (error) {
+         await this.completionHook.onError(error);
+       }
+     }
+   }
+   ```
+
+   See [RUNNER_INTEGRATION.md](RUNNER_INTEGRATION.md) for implementation guide.
+   查看 [RUNNER_INTEGRATION.md](RUNNER_INTEGRATION.md) 了解实现指南。
+
+**Notification Rules / 通知规则**:
+
+| Scenario / 场景 | Duration / 耗时 | Notification / 通知 |
+|:---|:---|:---|
+| Task Success / 任务成功 | < 60s | ❌ No notification / 不推送 |
+| Task Success / 任务成功 | > 60s | ✅ notify_send + notify_event |
+| Task Failure / 任务失败 | < 60s | ❌ No notification / 不推送 |
+| Task Failure / 任务失败 | > 60s | ✅ notify_send + notify_event |
+| User Action Needed / 等待用户 | > 60s | ✅ notify_send only |
 
 ---
 
