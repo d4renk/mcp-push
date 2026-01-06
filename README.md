@@ -180,23 +180,48 @@ For AI agent platforms like **Claude Code**, **Codex**, or **Gemini**, you can e
 - Sends notifications on task completion, failure, or user action needed / 在任务完成、失败或需要用户确认时发送通知
 - Model-agnostic: the model focuses on tasks, the runner handles notifications / 模型无感知：模型专注任务执行，通知由 runner 层处理
 
-**Integration Methods / 集成方式**:
+**Quick Install / 快速安装**:
 
-1. **Configuration-based (Recommended) / 基于配置（推荐）**
+```bash
+# One-line installation (Linux/macOS) 一键安装
+curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/install-hook.sh | bash
+```
 
-   Install the completion hook script and configure it in your settings.
-   安装完成通知脚本并在设置文件中配置。
+**Manual Installation / 手动安装**:
+
+1. **Install MCP Server / 安装 MCP 服务器**
 
    ```bash
+   # For Codex
+   codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push
+
+   # For Claude Desktop
+   claude mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git mcp-push
+   ```
+
+2. **Install Hook Scripts / 安装 Hook 脚本**
+
+   ```bash
+   # Clone repository
+   git clone https://github.com/d4renk/mcp-push.git
+   cd mcp-push
+
+   # Install hook scripts
    mkdir -p ~/.claude/hooks
-   cp completion-hook.sh ~/.claude/hooks/
-   chmod +x ~/.claude/hooks/completion-hook.sh
+   cp completion-hook-linux.sh ~/.claude/hooks/  # Linux
+   # OR for macOS: cp completion-hook.sh ~/.claude/hooks/
+   cp mcp-call.py ~/.claude/hooks/
+   chmod +x ~/.claude/hooks/completion-hook-linux.sh
+   chmod +x ~/.claude/hooks/mcp-call.py
+
+   # Configure Stop Hook
+   cat stop-hook-config.json >> ~/.claude/settings.json
    ```
 
    See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for full configuration details.
    查看 [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) 了解完整配置说明。
 
-2. **Source Code Integration / 源码集成**
+3. **Source Code Integration (Advanced) / 源码集成（高级）**
 
    For direct integration into the runner source code.
    直接集成到 runner 源码中。
