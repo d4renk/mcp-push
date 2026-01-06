@@ -20,40 +20,21 @@ codex mcp add mcp-push -- uvx --from git+https://github.com/d4renk/mcp-push.git 
 
 ### 2️⃣ 🤖 配置自动通知 / Setup Auto-Notification
 
-安装 Claude Code Stop Hook，实现任务完成自动推送：
-Install Claude Code Stop Hook for automatic task completion notifications:
+一键安装 Claude Code Stop Hook，自动配置任务完成推送：
+One-click install - automatically configures task completion notifications:
 
 ```bash
-# 自动安装 / Auto install
 curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/install-hook.sh | bash
-
-# 手动安装 / Manual install
-mkdir -p ~/.claude/hooks
-curl -fsSL https://raw.githubusercontent.com/d4renk/mcp-push/main/completion-hook-linux.sh \
-  -o ~/.claude/hooks/completion-hook-linux.sh
-chmod +x ~/.claude/hooks/completion-hook-linux.sh
 ```
 
-然后配置 `~/.claude/settings.json`：
-Then configure `~/.claude/settings.json`:
+脚本会自动完成：
+The script automatically:
+- ✅ 下载 Hook 脚本到 `~/.claude/hooks/` / Downloads Hook script
+- ✅ 自动配置 `~/.claude/settings.json` / Auto-configures settings.json
+- ✅ 设置正确的文件权限 / Sets correct permissions
 
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/completion-hook-linux.sh",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+> **提示 / Note**: 需要安装 `jq` 工具来自动配置。如果没有 jq，脚本会提示手动配置步骤。
+> Requires `jq` for auto-config. Without jq, manual steps will be shown.
 
 **Hook 功能 / Hook Features:**
 - ✅ 自动检测长耗时任务（>60s）/ Auto-detect long-running tasks (>60s)
