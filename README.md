@@ -101,6 +101,16 @@ export BARK_PUSH="https://api.day.app/your-device-code"
 
 # Server酱 / ServerChan
 export PUSH_KEY="your-server-chan-key"
+
+# ====== Hook 高级配置 / Hook Advanced Settings ======
+# 启用结构化消息推送（默认 true）/ Enable structured event notifications
+export MCP_PUSH_STRUCTURED=true
+
+# MCP 调用超时时间（秒，默认 10）/ MCP call timeout in seconds
+export MCP_PUSH_TIMEOUT_SEC=10
+
+# Hook 错误日志路径（可选）/ Hook error log path (optional)
+export MCP_PUSH_HOOK_LOG_PATH="/tmp/mcp-push-hook.log"
 ```
 
 **完整渠道配置 / Full channel list:** [docs/CHANNEL_CONFIG.md](docs/CHANNEL_CONFIG.md)
@@ -183,6 +193,46 @@ use_mcp_tool("notify_event", {
 **20+ 渠道完整配置 / Full 20+ channels:** [config.sh.example](config.sh.example)
 
 ## 📚 进阶配置 / Advanced Configuration
+
+### Hook 高级选项 / Hook Advanced Options
+
+**结构化推送配置 / Structured Notification Settings:**
+
+| 环境变量 / Variable | 默认值 / Default | 说明 / Description |
+|---------------------|------------------|-------------------|
+| `MCP_PUSH_STRUCTURED` | `true` | 启用结构化事件推送（`notify_event`），失败时降级到 `notify_send`<br>Enable structured event notifications, fallback to simple mode on failure |
+| `MCP_PUSH_TIMEOUT_SEC` | `10` | MCP 调用超时时间（秒）<br>MCP call timeout in seconds |
+| `MCP_PUSH_HOOK_LOG_PATH` | (空) | Hook 错误日志路径，留空则不记录<br>Hook error log path, leave empty to disable logging |
+
+**配置示例 / Configuration Example:**
+
+```bash
+# 在 config.sh 中配置 / Configure in config.sh
+export MCP_PUSH_STRUCTURED=true
+export MCP_PUSH_TIMEOUT_SEC=15
+export MCP_PUSH_HOOK_LOG_PATH="/var/log/mcp-push-hook.log"
+
+# 或通过环境变量 / Or via environment variables
+MCP_PUSH_STRUCTURED=false ./your-script.sh
+```
+
+**工作原理 / How It Works:**
+
+1. **优先模式 / Priority Mode** - 当 `MCP_PUSH_STRUCTURED=true` 时：
+   ```
+   尝试 notify_event (结构化) → 失败 → 降级到 notify_send (简单)
+   Try notify_event (structured) → Fail → Fallback to notify_send (simple)
+   ```
+
+2. **简单模式 / Simple Mode** - 当 `MCP_PUSH_STRUCTURED=false` 时：
+   ```
+   直接使用 notify_send (简单消息)
+   Direct notify_send (simple message)
+   ```
+
+3. **超时控制 / Timeout Control** - 防止 Hook 阻塞 Claude Code：
+   - 超时后自动终止 MCP 调用
+   - 不影响 Claude Code 正常流程
 
 ### 环境变量加载 / Environment Loading
 

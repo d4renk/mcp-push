@@ -4,6 +4,93 @@
 
 INPUT="$(cat)"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load config.sh only when MCP_PUSH_STRUCTURED is not set in the environment.
+if [ -z "${MCP_PUSH_STRUCTURED+x}" ]; then
+  if [ -f "./config.sh" ]; then
+    # shellcheck source=/dev/null
+    . "./config.sh"
+  elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/config.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$SCRIPT_DIR/config.sh"
+  fi
+fi
+
+MCP_PUSH_STRUCTURED="${MCP_PUSH_STRUCTURED:-true}"
+MCP_PUSH_TIMEOUT_SEC="${MCP_PUSH_TIMEOUT_SEC:-10}"
+MCP_PUSH_HOOK_LOG_PATH="${MCP_PUSH_HOOK_LOG_PATH:-}"
+
+if ! [[ "$MCP_PUSH_TIMEOUT_SEC" =~ ^[0-9]+$ ]]; then
+  MCP_PUSH_TIMEOUT_SEC="10"
+fi
+
+log_error() {
+  if [ -n "$MCP_PUSH_HOOK_LOG_PATH" ]; then
+    printf '[%s] %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$*" >> "$MCP_PUSH_HOOK_LOG_PATH" 2>/dev/null || true
+  fi
+}
+
+is_truthy() {
+  case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|y) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+mcp_call() {
+  local tool="$1"
+  shift
+  local -a cmd
+  cmd=("$MCP_CALL" "$MCP_SERVER" "$tool" "$@")
+
+  if command -v timeout > /dev/null 2>&1; then
+    timeout "${MCP_PUSH_TIMEOUT_SEC}s" "${cmd[@]}" >/dev/null 2>&1
+  else
+    "${cmd[@]}" >/dev/null 2>&1
+  fi
+}
+
+notify_send() {
+  local title="$1"
+  local content="$2"
+  mcp_call notify_send --title "$title" --content "$content"
+  local rc=$?
+  if [ $rc -ne 0 ]; then
+    log_error "notify_send failed (rc=$rc)"
+  fi
+  return $rc
+}
+
+notify_event() {
+  local event="$1"
+  local content="$2"
+  mcp_call notify_event \
+    --run_id "$RUN_ID" \
+    --event "$event" \
+    --message "$content" \
+    --data "$EVENT_DATA_JSON"
+  local rc=$?
+  if [ $rc -ne 0 ]; then
+    log_error "notify_event failed (event=$event, rc=$rc)"
+  fi
+  return $rc
+}
+
+notify_with_fallback() {
+  local title="$1"
+  local event="$2"
+  local content="$3"
+
+  if is_truthy "$MCP_PUSH_STRUCTURED"; then
+    if notify_event "$event" "$content"; then
+      return 0
+    fi
+  fi
+
+  notify_send "$title" "$content" || true
+}
+
 print_hook_json() {
   printf '{"continue": true, "suppressOutput": true}\n'
 }
@@ -76,6 +163,8 @@ fi
 
 ELAPSED_MS=$((CURRENT_TIME - STARTED_AT_MS))
 THRESHOLD=60000
+STARTED_AT_ISO="$(date -d "@$((STARTED_AT_MS / 1000))" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
+EVENT_DATA_JSON="$(jq -n --arg duration_ms "$ELAPSED_MS" --arg started_at_ms "$STARTED_AT_MS" --arg started_at "$STARTED_AT_ISO" '{duration_ms: ($duration_ms|tonumber), started_at_ms: ($started_at_ms|tonumber), started_at: $started_at}' 2>/dev/null || printf '{}')"
 
 if [ "$ELAPSED_MS" -lt "$THRESHOLD" ]; then
   print_hook_json
@@ -126,31 +215,15 @@ MCP_CALL="/home/sun/mcp-push/mcp-call.py"
 case "$EVENT_TYPE" in
   "needs_user_action")
     TITLE="等待批准"
-    "$MCP_CALL" "$MCP_SERVER" notify_send \
-      --title "$TITLE" \
-      --content "$MESSAGE" 2>&1 >/dev/null
+    notify_with_fallback "$TITLE" "needs_user_action" "$MESSAGE"
     ;;
   "end")
     TITLE="任务完成"
-    "$MCP_CALL" "$MCP_SERVER" notify_send \
-      --title "$TITLE" \
-      --content "$MESSAGE" 2>&1 >/dev/null
-    "$MCP_CALL" "$MCP_SERVER" notify_event \
-      --run_id "$RUN_ID" \
-      --event "end" \
-      --message "$MESSAGE" \
-      --data "{\"duration_ms\": $ELAPSED_MS}" 2>&1 >/dev/null
+    notify_with_fallback "$TITLE" "end" "$MESSAGE"
     ;;
   "error")
     TITLE="任务失败"
-    "$MCP_CALL" "$MCP_SERVER" notify_send \
-      --title "$TITLE" \
-      --content "$MESSAGE" 2>&1 >/dev/null
-    "$MCP_CALL" "$MCP_SERVER" notify_event \
-      --run_id "$RUN_ID" \
-      --event "error" \
-      --message "$MESSAGE" \
-      --data "{\"duration_ms\": $ELAPSED_MS}" 2>&1 >/dev/null
+    notify_with_fallback "$TITLE" "error" "$MESSAGE"
     ;;
 esac
 
